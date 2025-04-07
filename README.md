@@ -5,7 +5,7 @@ see blog: [Stepper Motor Control with Raspberry Pico PI and DRV8711 driver- Part
 
 - 4 motors can be controlled per PIO
 - supports DRV8711 (but can be reused for drivers that have PIN and DIR)
-- can handle as many commands as PIO FIFO accepts (default 8). Each command can autonomously handle 2147483647 steps, and the spin direction
+- can handle as many commands as PIO FIFO accepts without waiting (default 8). Each command can autonomously handle 2147483647 steps, and the spin direction
 
 Example motor instruction batch of 6 instructions:  
 ```
