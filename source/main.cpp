@@ -130,17 +130,17 @@ int main() {
         {350 * microstep_multiplier, true}}
     };
 
+    uint32_t sleep_time = 0U;
     {
         wakeup_drv8711 w; // wake up the stepper driver
         sleep_ms(1); // see datasheet
+
         for(auto c : cmd) {
-            printf("Steps = %d\n", c.steps);
+            // printf("Steps = %d\n", c.steps);
             pio_stepper_set_steps(piostep, sm, c.steps, c.reverse);
-            // sleep the time it takes for the steps + 0.5 second
-            // for demo purpose
-            sleep_ms(step_time(c.steps) + 500); 
+            sleep_time += step_time(c.steps); 
         }
-        sleep_ms(500); // give enough time to complete the action
+        sleep_ms(sleep_time + 500); // give enough time to complete the action
     }
 
     return 0;
