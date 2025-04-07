@@ -3,7 +3,7 @@ Raspberry PIO autonomous stepper motor driver
 
 see blog: [Stepper Motor Control with Raspberry Pico PI and DRV8711 driver- Part 5: a more autonomous PIO](https://community.element14.com/products/raspberry-pi/b/blog/posts/stepper-motor-control-with-raspberry-pico-pi-and-drv8711-driver--part-5-a-more-autonomous-pio)  
 
-- 4 motors per PIO
+- 4 motors can be controlled per PIO
 - supports DRV8711 (but can be reused for drivers that have PIN and DIR
 - can handle as many commands as PIO FIFO accepts. Each command can autonomously handle 2147483647 steps, and direction
 
