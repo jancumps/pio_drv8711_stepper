@@ -13,15 +13,24 @@ import drv8711;
 // pre-configured registers:
 import drv8711_config;
 
+// #define MICROSTEP_8
+// #undef MICROSTEP_8
+
 const uint nsleep = 14;
 const uint reset = 15;
 const uint dir = 4;
 const uint step = 5;
 const auto piostep = pio1;
 const uint sm = 0;
-// const float frequency = 7700.0; // works well for 8 microsteps
-const float frequency = 920.0; // works well for no microsteps
+
+#ifdef MICROSTEP_8
+const float frequency = 7700.0; // works well for 8 microsteps
+const uint microstep_multiplier = 8;
+#else
+const float frequency = 850.0; // works well for no microsteps
 const uint microstep_multiplier = 1;
+#endif
+
 
 class wakeup_drv8711 { // driver out of sleep as long as object in scope
 public:    
@@ -43,10 +52,10 @@ static void spi_write(const uint16_t &data) {
 
 void init_drv8711_settings() {
     // override any default settings
-    if (microstep_multiplier == 8) {
-        drv8711::reg_ctrl.mode = 0x0003; // MODE 8 microsteps
-    }
-    drv8711::reg_torque.torque = 0x00ff;
+    #ifdef MICROSTEP_8
+    drv8711::reg_ctrl.mode = 0x0003; // MODE 8 microsteps
+    #endif
+    // drv8711::reg_torque.torque = 0x00ff;
     // and config over SPI
     spi_write(drv8711::reg_ctrl);
     spi_write(drv8711::reg_torque);
