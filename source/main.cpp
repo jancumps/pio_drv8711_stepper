@@ -16,12 +16,12 @@ import drv8711_config;
 // #define MICROSTEP_8
 // #undef MICROSTEP_8
 
-const uint nsleep = 14;
-const uint reset = 15;
-const uint dir = 4;
-const uint step = 5;
+const uint nsleep = 14U;
+const uint reset = 15U;
+const uint dir = 4U;
+const uint step = 5U;
 const auto piostep = pio1;
-const uint sm = 0;
+const uint sm = 0U;
 
 #ifdef MICROSTEP_8
 const float frequency = 7700.0; // works well for 8 microsteps
@@ -55,7 +55,7 @@ void init_drv8711_settings() {
     #ifdef MICROSTEP_8
     drv8711::reg_ctrl.mode = 0x0003; // MODE 8 microsteps
     #endif
-    // drv8711::reg_torque.torque = 0x00ff;
+    drv8711::reg_torque.torque = 0x00ff;
     // and config over SPI
     spi_write(drv8711::reg_ctrl);
     spi_write(drv8711::reg_torque);
@@ -119,9 +119,20 @@ void pio_stepper_set_steps(PIO pio, uint sm, uint32_t steps, bool reverse) {
     pio_sm_put_blocking(pio, sm, steps << 1 | (reverse ? 0 : 1));
 }
 
-inline uint32_t step_time(uint32_t steps) {
-    return (steps > (UINT32_MAX >> 1)) ? 0 : steps * 1000 / frequency;
+inline uint32_t step_time(uint32_t steps, uint32_t delay) {
+    // clumsy way to refactor steps based on delay. It's not good but reasonable
+    return (steps > (UINT32_MAX >> 1)) ? 0 : 
+        (uint32_t)((steps * 1000 / frequency) * (((delay + 1000000.0) / 1000000.0)));
 }
+
+void pio_pwm_set_delay(PIO pio, uint sm, uint32_t delay) {
+    pio_sm_set_enabled(pio, sm, false);
+    pio_sm_put_blocking(pio, sm, delay);
+    pio_sm_exec(pio, sm, pio_encode_pull(false, false));
+    pio_sm_exec(pio, sm, pio_encode_out(pio_isr, 32));
+    pio_sm_set_enabled(pio, sm, true);
+}
+
 
 struct command {
     uint32_t steps;
@@ -141,15 +152,19 @@ int main() {
 
     uint32_t sleep_time = 0U;
     {
+
         wakeup_drv8711 w; // wake up the stepper driver
         sleep_ms(1); // see datasheet
 
-        for(auto c : cmd) {
-            // printf("Steps = %d\n", c.steps);
-            pio_stepper_set_steps(piostep, sm, c.steps, c.reverse);
-            sleep_time += step_time(c.steps); 
+        for (auto i = 0; i < 5; i++) {
+            pio_pwm_set_delay(piostep, sm, i);
+            for(auto c : cmd) {
+                // printf("Steps = %d\n", c.steps);
+                pio_stepper_set_steps(piostep, sm, c.steps, c.reverse);
+                sleep_time += (uint32_t)((step_time(c.steps, i) * 1.0) ); 
+            }
+            sleep_ms(sleep_time + 500); // give enough time to complete the action
         }
-        sleep_ms(sleep_time + 500); // give enough time to complete the action
     }
 
     return 0;

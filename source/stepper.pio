@@ -4,21 +4,31 @@
 
 .program stepper
 .side_set 1
-.define public DELAY 15
+.define public DELAY 0
 .wrap_target
 start:
-    pull block      side 0 ; Pull from FIFO to OSR
-    out pins, 1     side 0 ; shift direction out of OSR and output to dir
-    mov x, osr      side 0 ; Copy rest of OSR to scratch X
-    jmp !x start    side 0
-    jmp x-- count   side 0
-count:
-    nop             side 1 [DELAY]
-    jmp x-- count   side 0 [DELAY]
+    pull block                  side 0 ; Pull from FIFO to OSR
+    out pins, 1                 side 0 ; shift direction out of OSR and output to dir
+    mov x, osr                  side 0 ; Copy rest of OSR to scratch X
+    jmp !x start                side 0
+    jmp x-- tocks_h             side 0
+tocks_h:
+    mov y, isr                  side 1 ; ISR contains number of tocks to hold level
+count_high:
+    jmp y-- count_high          side 1 [DELAY] ; keep high for tocks
+    nop                         side 1 ; same size as low
+tocks_l:
+    mov y, isr                  side 0 ; ISR contains number of tocks to hold level
+count_low:
+    jmp y-- count_low           side 0 [DELAY] ; keep high for tocks
+    jmp x-- tocks_h             side 0 ; not done, keep loopins
 .wrap
 
 % c-sdk {
 #include "hardware/clocks.h"
+
+const uint clock_factor = 6U;
+
 static inline void stepper_program_init(PIO pio, uint sm, uint offset, uint pin, float freq) {
    pio_gpio_init(pio, pin);
    pio_gpio_init(pio, pin+1);
@@ -28,7 +38,7 @@ static inline void stepper_program_init(PIO pio, uint sm, uint offset, uint pin,
    pio_sm_set_consecutive_pindirs(pio, sm, pin, 2, true);
    sm_config_set_sideset_pins(&c, pin+1);
 
-   float div = clock_get_hz(clk_sys) / (32*freq);
+   float div = clock_get_hz(clk_sys) / (clock_factor * freq);
    sm_config_set_clkdiv(&c, div);
 
    pio_sm_init(pio, sm, offset, &c);
