@@ -39,7 +39,7 @@ static inline void stepper_program_init(PIO pio, uint sm, uint offset, uint pin,
    sm_config_set_sideset_pins(&c, pin+1);
 
    float div = clock_get_hz(clk_sys) / (clock_factor * freq);
-   sm_config_set_clkdiv(&c, div);
+   //sm_config_set_clkdiv(&c, div);
 
    pio_sm_init(pio, sm, offset, &c);
 }

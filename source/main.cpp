@@ -13,7 +13,7 @@ import drv8711;
 // pre-configured registers:
 import drv8711_config;
 
-// #define MICROSTEP_8
+#define MICROSTEP_8
 // #undef MICROSTEP_8
 
 const uint nsleep = 14U;
@@ -24,7 +24,7 @@ const auto piostep = pio1;
 const uint sm = 0U;
 
 #ifdef MICROSTEP_8
-const float frequency = 7700.0; // works well for 8 microsteps
+const float frequency = 7200.0; // works well for 8 microsteps
 const uint microstep_multiplier = 8;
 #else
 const float frequency = 850.0; // works well for no microsteps
@@ -55,7 +55,7 @@ void init_drv8711_settings() {
     #ifdef MICROSTEP_8
     drv8711::reg_ctrl.mode = 0x0003; // MODE 8 microsteps
     #endif
-    drv8711::reg_torque.torque = 0x00ff;
+    // drv8711::reg_torque.torque = 0x00ff;
     // and config over SPI
     spi_write(drv8711::reg_ctrl);
     spi_write(drv8711::reg_torque);
@@ -156,8 +156,8 @@ int main() {
         wakeup_drv8711 w; // wake up the stepper driver
         sleep_ms(1); // see datasheet
 
-        for (auto i = 0; i < 5; i++) {
-            pio_pwm_set_delay(piostep, sm, i);
+        for (auto i = 1; i < 6; i++) {
+            pio_pwm_set_delay(piostep, sm, i * 2000 + 8000);
             for(auto c : cmd) {
                 // printf("Steps = %d\n", c.steps);
                 pio_stepper_set_steps(piostep, sm, c.steps, c.reverse);
