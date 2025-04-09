@@ -8,6 +8,7 @@
 
 #include <array>
 #include <iterator>
+#include <span>
 
 import drv8711;
 // pre-configured registers:
@@ -24,10 +25,10 @@ const auto piostep = pio1;
 const uint sm = 0U;
 
 #ifdef MICROSTEP_8
-const float frequency = 7200.0; // works well for 8 microsteps
+const float clock_divider = 2; // works well for 8 microsteps
 const uint microstep_multiplier = 8;
 #else
-const float frequency = 850.0; // works well for no microsteps
+const float clock_divider = 100; // works well for no microsteps
 const uint microstep_multiplier = 1;
 #endif
 
@@ -54,8 +55,8 @@ void init_drv8711_settings() {
     // override any default settings
     #ifdef MICROSTEP_8
     drv8711::reg_ctrl.mode = 0x0003; // MODE 8 microsteps
+    //drv8711::reg_torque.torque = 0x00ff;
     #endif
-    // drv8711::reg_torque.torque = 0x00ff;
     // and config over SPI
     spi_write(drv8711::reg_ctrl);
     spi_write(drv8711::reg_torque);
@@ -97,7 +98,7 @@ void init_pio() {
     uint offset = pio_add_program(piostep, &stepper_program);
     printf("Loaded program at %d\n", offset);
 
-    stepper_program_init(piostep, sm, offset, dir, frequency);
+    stepper_program_init(piostep, sm, offset, dir, clock_divider);
     pio_sm_set_enabled(piostep, sm, true);
 }
 
@@ -119,15 +120,10 @@ void pio_stepper_set_steps(PIO pio, uint sm, uint32_t steps, bool reverse) {
     pio_sm_put_blocking(pio, sm, steps << 1 | (reverse ? 0 : 1));
 }
 
-inline uint32_t step_time(uint32_t steps, uint32_t delay) {
-    // clumsy way to refactor steps based on delay. It's not good but reasonable
-    return (steps > (UINT32_MAX >> 1)) ? 0 : 
-        (uint32_t)((steps * 1000 / frequency) * (((delay + 1000000.0) / 1000000.0)));
-}
-
+// call when the PIO is free. It interferes with activities
 void pio_pwm_set_delay(PIO pio, uint sm, uint32_t delay) {
     pio_sm_set_enabled(pio, sm, false);
-    pio_sm_put_blocking(pio, sm, delay);
+    pio_sm_put(pio, sm, delay);
     pio_sm_exec(pio, sm, pio_encode_pull(false, false));
     pio_sm_exec(pio, sm, pio_encode_out(pio_isr, 32));
     pio_sm_set_enabled(pio, sm, true);
@@ -138,6 +134,14 @@ struct command {
     uint32_t steps;
     bool reverse;
 };
+
+void demo_with_delay(const std::span<command> & cmd, uint32_t delay) {
+    pio_pwm_set_delay(piostep, sm, delay);
+    for(auto c : cmd) {
+        // printf("Steps = %d\n", c.steps);
+        pio_stepper_set_steps(piostep, sm, c.steps, c.reverse);
+    }
+}
 
 int main() {
     init_everything();
@@ -150,22 +154,16 @@ int main() {
         {350 * microstep_multiplier, true}}
     };
 
-    uint32_t sleep_time = 0U;
     {
-
         wakeup_drv8711 w; // wake up the stepper driver
         sleep_ms(1); // see datasheet
 
-        for (auto i = 1; i < 6; i++) {
-            pio_pwm_set_delay(piostep, sm, i * 2000 + 8000);
-            for(auto c : cmd) {
-                // printf("Steps = %d\n", c.steps);
-                pio_stepper_set_steps(piostep, sm, c.steps, c.reverse);
-                sleep_time += (uint32_t)((step_time(c.steps, i) * 1.0) ); 
-            }
-            sleep_ms(sleep_time + 500); // give enough time to complete the action
-        }
+        demo_with_delay(cmd, 4300);
+        sleep_ms(2000); // give enough time to complete the action
+        demo_with_delay(cmd, 7000);
+        sleep_ms(3000); // give enough time to complete the action
+        demo_with_delay(cmd, 9000);
+        sleep_ms(4500); // give enough time to complete the action
     }
-
     return 0;
 }
