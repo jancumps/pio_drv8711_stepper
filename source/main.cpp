@@ -9,6 +9,7 @@
 #include <array>
 #include <iterator>
 #include <span>
+#include <utility>
 
 import drv8711;
 // pre-configured registers:
@@ -23,7 +24,7 @@ const uint dir = 4U;
 const uint step = 5U;
 const auto piostep = pio1;
 const uint pio_irq = PIO1_IRQ_0; 
-const uint sm = 0U;
+const uint sm = 2U;
 
 volatile uint commands_completed = 0U;
 
@@ -97,8 +98,9 @@ void init_drv8711_gpio_hw() {
 }
 
 void pio_irq_handler(void){
-    if(pio_interrupt_get(piostep,0))     {
-        pio_interrupt_clear(piostep, 0);
+    if(pio_interrupt_get(piostep, stepper_PIO_IRQ_DONE + sm))     {
+        assert(piostep->irq & 1 << sm); // develop check: interrupt is from the correct state machine
+        pio_interrupt_clear(piostep, stepper_PIO_IRQ_DONE + sm);
         commands_completed = commands_completed + 1;
     }
 }
@@ -108,7 +110,7 @@ void init_pio() {
     uint offset = pio_add_program(piostep, &stepper_program);
     printf("Loaded program at %d\n", offset);
 
-    pio_set_irq0_source_enabled(piostep, pis_interrupt0 , true); 
+    pio_set_irq0_source_enabled(piostep, static_cast<pio_interrupt_source>(std::to_underlying(pis_interrupt0) + sm) , true); 
     irq_set_exclusive_handler(pio_irq, pio_irq_handler);  //Set the handler in the NVIC
     irq_set_enabled(pio_irq, true);
 
@@ -179,17 +181,16 @@ int main() {
 
         demo_with_delay(cmd, 4300);
         while(commands_completed < command_count) {}
-        sleep_ms(500); // give enough time to complete the action
         printf("interrupts expected: %d, received %d\n", command_count, commands_completed);
         commands_completed = 0U;
+        sleep_ms(500); // give enough time to complete the action
         demo_with_delay(cmd, 7000);
         while(commands_completed < command_count) {}
-        sleep_ms(500); // give enough time to complete the action
         printf("interrupts expected: %d, received %d\n", command_count, commands_completed);
         commands_completed = 0U;
+        sleep_ms(500); // give enough time to complete the action
         demo_with_delay(cmd, 9000);
         while(commands_completed < command_count) {}
-        sleep_ms(500); // give enough time to complete the action
         printf("interrupts expected: %d, received %d\n", command_count, commands_completed);
         commands_completed = 0U;
     }
