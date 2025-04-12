@@ -22,7 +22,10 @@ const uint reset = 15U;
 const uint dir = 4U;
 const uint step = 5U;
 const auto piostep = pio1;
+const uint pio_irq = PIO1_IRQ_0; 
 const uint sm = 0U;
+
+volatile uint commands_completed = 0U;
 
 #ifdef MICROSTEP_8
 const float clock_divider = 2; // works well for 8 microsteps
@@ -93,10 +96,21 @@ void init_drv8711_gpio_hw() {
     gpio_set_dir(reset, GPIO_OUT);
 }
 
+void pio_irq_handler(void){
+    if(pio_interrupt_get(piostep,0))     {
+        pio_interrupt_clear(piostep, 0);
+        commands_completed = commands_completed + 1;
+    }
+}
+
 void init_pio() {
     // todo get free sm
     uint offset = pio_add_program(piostep, &stepper_program);
     printf("Loaded program at %d\n", offset);
+
+    pio_set_irq0_source_enabled(piostep, pis_interrupt0 , true); 
+    irq_set_exclusive_handler(pio_irq, pio_irq_handler);  //Set the handler in the NVIC
+    irq_set_enabled(pio_irq, true);
 
     stepper_program_init(piostep, sm, offset, dir, clock_divider);
     pio_sm_set_enabled(piostep, sm, true);
@@ -129,6 +143,8 @@ void pio_pwm_set_delay(PIO pio, uint sm, uint32_t delay) {
     pio_sm_set_enabled(pio, sm, true);
 }
 
+
+
 // stepper demo: series of commands ================================= //
 
 struct command {
@@ -145,6 +161,7 @@ void demo_with_delay(const std::span<command> & cmd, uint32_t delay) {
 }
 
 int main() {
+
     init_everything();
     std::array<command, 6> cmd{{
         {200 * microstep_multiplier, true}, 
@@ -154,17 +171,29 @@ int main() {
         {250 * microstep_multiplier, true},
         {350 * microstep_multiplier, true}}
     };
+    int command_count = cmd.size();
 
     {
         wakeup_drv8711 w; // wake up the stepper driver
         sleep_ms(1); // see datasheet
 
         demo_with_delay(cmd, 4300);
-        sleep_ms(2000); // give enough time to complete the action
+        while(commands_completed < command_count) {}
+        sleep_ms(500); // give enough time to complete the action
+        printf("interrupts expected: %d, received %d\n", command_count, commands_completed);
+        commands_completed = 0U;
         demo_with_delay(cmd, 7000);
-        sleep_ms(3000); // give enough time to complete the action
+        while(commands_completed < command_count) {}
+        sleep_ms(500); // give enough time to complete the action
+        printf("interrupts expected: %d, received %d\n", command_count, commands_completed);
+        commands_completed = 0U;
         demo_with_delay(cmd, 9000);
-        sleep_ms(4500); // give enough time to complete the action
+        while(commands_completed < command_count) {}
+        sleep_ms(500); // give enough time to complete the action
+        printf("interrupts expected: %d, received %d\n", command_count, commands_completed);
+        commands_completed = 0U;
     }
+
+
     return 0;
 }
