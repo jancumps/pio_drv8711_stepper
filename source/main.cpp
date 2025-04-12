@@ -14,7 +14,7 @@ import drv8711;
 // pre-configured registers:
 import drv8711_config;
 
-#define MICROSTEP_8
+// #define MICROSTEP_8
 // #undef MICROSTEP_8
 
 const uint nsleep = 14U;
@@ -28,7 +28,7 @@ const uint sm = 0U;
 const float clock_divider = 2; // works well for 8 microsteps
 const uint microstep_multiplier = 8;
 #else
-const float clock_divider = 100; // works well for no microsteps
+const float clock_divider = 16; // works well for no microsteps
 const uint microstep_multiplier = 1;
 #endif
 
@@ -129,6 +129,7 @@ void pio_pwm_set_delay(PIO pio, uint sm, uint32_t delay) {
     pio_sm_set_enabled(pio, sm, true);
 }
 
+// stepper demo: series of commands ================================= //
 
 struct command {
     uint32_t steps;
