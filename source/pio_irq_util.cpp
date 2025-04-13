@@ -31,6 +31,9 @@ inline uint relative_interrupt(const uint32_t ir, const uint sm) {
     uint32_t retval = ir & 0x03; // last 2 bits
     retval += sm; // add relative value (is sm)
     retval = retval % 4; // mod 4
+    // TODO most likely I have to restore bits 31..2 here to work with Pico 2
+    // but I don't have one to test it
+    // retval |= ir & oxfffffffc
     return retval;
 }
 
