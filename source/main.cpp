@@ -109,6 +109,7 @@ void pio_irq_handler(void){
     if(pio_interrupt_get(piostep, ir)) {
         assert(piostep->irq == 1 << ir); // develop check: interrupt is from the correct state machine
         printf("interrupt %d from sm %d\n", stepper_PIO_IRQ_DONE, pio_irq_util::sm_from_interrupt(piostep->irq, stepper_PIO_IRQ_DONE));
+        // TODO improve: I should always clear the interrupt - or accept failure and die
         pio_interrupt_clear(piostep, ir);
         commands_completed = commands_completed + 1;
     }
