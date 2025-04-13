@@ -33,7 +33,7 @@ inline uint relative_interrupt(const uint32_t ir, const uint sm) {
     retval = retval % 4; // mod 4
     // TODO most likely I have to restore bits 31..2 here to work with Pico 2
     // but I don't have one to test it
-    // retval |= ir & oxfffffffc
+    retval |= ir & 0xfffffffc;
     return retval;
 }
 
@@ -44,11 +44,12 @@ inline pio_interrupt_source interrupt_source(const pio_interrupt_source is, cons
 uint sm_from_interrupt(const uint32_t irq_val, const uint32_t ir) {
     // TODO validate for Pico 2 interrupts 4 .. 7
     uint i;
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < 8; i++) {
         if (irq_val == 1 << relative_interrupt(ir, i)) {
             break;
         }
     }
+    assert(i != 8); // develop check there has to be a bit
     return i;
 }
 
