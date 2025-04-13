@@ -174,6 +174,8 @@ void demo_with_delay(const std::span<command> & cmd, uint32_t delay) {
 }
 
 void full_demo(const std::span<command> & cmd) {
+    commands_completed = 0U;
+    
     printf("running on sm %d, with interrupt %d\n", sm, stepper_PIO_IRQ_DONE);
     int command_count = cmd.size();
     wakeup_drv8711 w; // wake up the stepper driver
