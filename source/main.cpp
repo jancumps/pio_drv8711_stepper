@@ -9,11 +9,11 @@
 #include <array>
 #include <iterator>
 #include <span>
-#include <utility>
 
 import drv8711;
 // pre-configured registers:
 import drv8711_config;
+import pio_irq_util;
 
 // #define MICROSTEP_8
 // #undef MICROSTEP_8
@@ -24,7 +24,7 @@ const uint dir = 4U;
 const uint step = 5U;
 const auto piostep = pio1;
 const uint pio_irq = PIO1_IRQ_0; 
-const uint sm = 2U;
+const uint sm = 3U;
 
 volatile uint commands_completed = 0U;
 
@@ -98,19 +98,23 @@ void init_drv8711_gpio_hw() {
 }
 
 void pio_irq_handler(void){
-    if(pio_interrupt_get(piostep, stepper_PIO_IRQ_DONE + sm))     {
-        assert(piostep->irq & 1 << sm); // develop check: interrupt is from the correct state machine
-        pio_interrupt_clear(piostep, stepper_PIO_IRQ_DONE + sm);
+    uint ir = pio_irq_util::relative_interrupt(stepper_PIO_IRQ_DONE, sm);
+    if(pio_interrupt_get(piostep, ir)) {
+        assert(piostep->irq == 1 << ir); // develop check: interrupt is from the correct state machine
+        printf("interrupt %d from sm %d\n", stepper_PIO_IRQ_DONE, pio_irq_util::sm_from_interrupt(piostep->irq, stepper_PIO_IRQ_DONE));
+        pio_interrupt_clear(piostep, ir);
         commands_completed = commands_completed + 1;
     }
 }
 
 void init_pio() {
-    // todo get free sm
     uint offset = pio_add_program(piostep, &stepper_program);
     printf("Loaded program at %d\n", offset);
 
-    pio_set_irq0_source_enabled(piostep, static_cast<pio_interrupt_source>(std::to_underlying(pis_interrupt0) + sm) , true); 
+    pio_set_irq0_source_enabled(
+        piostep, pio_irq_util::interrupt_source(pis_interrupt0, 
+            pio_irq_util::relative_interrupt(stepper_PIO_IRQ_DONE, sm)), true); 
+
     irq_set_exclusive_handler(pio_irq, pio_irq_handler);  //Set the handler in the NVIC
     irq_set_enabled(pio_irq, true);
 
@@ -145,8 +149,6 @@ void pio_pwm_set_delay(PIO pio, uint sm, uint32_t delay) {
     pio_sm_set_enabled(pio, sm, true);
 }
 
-
-
 // stepper demo: series of commands ================================= //
 
 struct command {
@@ -155,11 +157,36 @@ struct command {
 };
 
 void demo_with_delay(const std::span<command> & cmd, uint32_t delay) {
+    printf("delay: %d\n", delay);
     pio_pwm_set_delay(piostep, sm, delay);
     for(auto c : cmd) {
         // printf("Steps = %d\n", c.steps);
         pio_stepper_set_steps(piostep, sm, c.steps, c.reverse);
     }
+}
+
+void full_demo(const std::span<command> & cmd) {
+    printf("running on sm %d, with interrupt %d\n", sm, stepper_PIO_IRQ_DONE);
+    int command_count = cmd.size();
+    wakeup_drv8711 w; // wake up the stepper driver
+    sleep_ms(1); // see datasheet
+    
+    demo_with_delay(cmd, 4300);
+    while(commands_completed < command_count) {}
+    printf("interrupts expected: %d, received %d\n", command_count, commands_completed);
+    commands_completed = 0U;
+    sleep_ms(500); // give enough time to complete the action
+    
+    demo_with_delay(cmd, 7000);
+    while(commands_completed < command_count) {}
+    printf("interrupts expected: %d, received %d\n", command_count, commands_completed);
+    commands_completed = 0U;
+    sleep_ms(500); // give enough time to complete the action
+    
+    demo_with_delay(cmd, 9000);
+    while(commands_completed < command_count) {}
+    printf("interrupts expected: %d, received %d\n", command_count, commands_completed);
+    commands_completed = 0U;
 }
 
 int main() {
@@ -173,27 +200,8 @@ int main() {
         {250 * microstep_multiplier, true},
         {350 * microstep_multiplier, true}}
     };
-    int command_count = cmd.size();
 
-    {
-        wakeup_drv8711 w; // wake up the stepper driver
-        sleep_ms(1); // see datasheet
-
-        demo_with_delay(cmd, 4300);
-        while(commands_completed < command_count) {}
-        printf("interrupts expected: %d, received %d\n", command_count, commands_completed);
-        commands_completed = 0U;
-        sleep_ms(500); // give enough time to complete the action
-        demo_with_delay(cmd, 7000);
-        while(commands_completed < command_count) {}
-        printf("interrupts expected: %d, received %d\n", command_count, commands_completed);
-        commands_completed = 0U;
-        sleep_ms(500); // give enough time to complete the action
-        demo_with_delay(cmd, 9000);
-        while(commands_completed < command_count) {}
-        printf("interrupts expected: %d, received %d\n", command_count, commands_completed);
-        commands_completed = 0U;
-    }
+    full_demo(cmd);
 
 
     return 0;
