@@ -22,9 +22,16 @@ const uint nsleep = 14U;
 const uint reset = 15U;
 const uint dir = 4U;
 const uint step = 5U;
+
+// config what PIO and IRQ channel to use
 const auto piostep = pio1;
-const uint pio_irq = PIO1_IRQ_0; 
-const uint sm = 3U;
+// use irq channel 0 of the correct PIO:
+const uint pio_irq = PIO1_IRQ_0;
+// also use the correct pio_set_irqX_source_enabled
+// in the source code:
+#define PIO_SET_SOURCE_ENABLED pio_set_irq0_source_enabled
+
+const uint sm = 2U;
 
 volatile uint commands_completed = 0U;
 
@@ -111,7 +118,7 @@ void init_pio() {
     uint offset = pio_add_program(piostep, &stepper_program);
     printf("Loaded program at %d\n", offset);
 
-    pio_set_irq0_source_enabled(
+    PIO_SET_SOURCE_ENABLED(
         piostep, pio_irq_util::interrupt_source(pis_interrupt0, 
             pio_irq_util::relative_interrupt(stepper_PIO_IRQ_DONE, sm)), true); 
 
