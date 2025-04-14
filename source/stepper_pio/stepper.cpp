@@ -27,14 +27,14 @@ private:
 */
 class stepper {
 public:
-    stepper(pio_hw_t *pio, uint sm) : _pio(pio), _sm(sm) {}
+    stepper(PIO pio, uint sm) : _pio(pio), _sm(sm) {}
 
-    // Write `steps` to TX FIFO. State machine will copy this into X.
+    // Write `steps` to TX FIFO. State machine will copy this into X
     static inline void pio_stepper_set_steps(PIO pio, uint sm, const command& cmd) {
         pio_sm_put_blocking(pio, sm, cmd);
     }
 
-    // Write `steps` to TX FIFO. State machine will copy this into X.
+    // Write `steps` to TX FIFO. State machine will copy this into X
     static inline void pio_stepper_set_steps(PIO pio, uint sm, uint32_t steps, bool reverse) {
         pio_sm_put_blocking(pio, sm, command(steps, reverse));
     }
@@ -48,7 +48,7 @@ public:
         pio_sm_set_enabled(pio, sm, true);
     }
 
-    // Write `steps` to TX FIFO. State machine will copy this into X.
+    // Write `steps` to TX FIFO. State machine will copy this into X
     inline void pio_stepper_set_steps(const command& cmd) {
         pio_stepper_set_steps(_pio, _sm, cmd);
     }
@@ -58,8 +58,8 @@ public:
         pio_pwm_set_delay(_pio, _sm, delay);
     }
 
-private:
-    pio_hw_t * _pio;
+protected:
+    PIO _pio;
     uint _sm;
 };
 
