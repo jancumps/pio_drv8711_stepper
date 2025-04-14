@@ -13,6 +13,7 @@
 import drv8711;
 // pre-configured registers:
 import drv8711_config;
+import stepper;
 import pio_irq_util;
 
 // #define MICROSTEP_8
@@ -43,6 +44,7 @@ const float clock_divider = 16; // works well for no microsteps
 const uint microstep_multiplier = 1;
 #endif
 
+stepper::stepper motor1(piostep, sm);
 
 class wakeup_drv8711 { // driver out of sleep as long as object in scope
 public:    
@@ -104,6 +106,9 @@ void init_drv8711_gpio_hw() {
     gpio_set_dir(reset, GPIO_OUT);
 }
 
+// ================================================================
+// PIO init
+
 void pio_irq_handler(void){
     uint ir = pio_irq_util::relative_interrupt(stepper_PIO_IRQ_DONE, sm);
     if(pio_interrupt_get(piostep, ir)) {
@@ -130,6 +135,8 @@ void init_pio() {
     pio_sm_set_enabled(piostep, sm, true);
 }
 
+// ================================================================
+
 void init_everything() {
     stdio_init_all();
     init_drv8711_gpio_hw();
@@ -138,42 +145,19 @@ void init_everything() {
     init_pio();
 }
 
-// Write `steps` to TX FIFO. State machine will copy this into X.
-// max steps taken is 2147483647 (highest number that fits in 31 bits)
-void pio_stepper_set_steps(PIO pio, uint sm, uint32_t steps, bool reverse) {
-    if (steps > (UINT32_MAX >> 1)) {
-        printf("%d is more than max steps (%d)\n", steps, UINT32_MAX >> 1);
-        return;
-    }
-    pio_sm_put_blocking(pio, sm, steps << 1 | (reverse ? 0 : 1));
-}
+// stepper demo: execute a series of commands ================================
 
-// call when the PIO is free. It interferes with activities
-void pio_pwm_set_delay(PIO pio, uint sm, uint32_t delay) {
-    pio_sm_set_enabled(pio, sm, false);
-    pio_sm_put(pio, sm, delay);
-    pio_sm_exec(pio, sm, pio_encode_pull(false, false));
-    pio_sm_exec(pio, sm, pio_encode_out(pio_isr, 32));
-    pio_sm_set_enabled(pio, sm, true);
-}
+using commands_t = std::span<stepper::command>;	
 
-// stepper demo: series of commands ================================= //
-
-struct command {
-    uint32_t steps;
-    bool reverse;
-};
-
-void demo_with_delay(const std::span<command> & cmd, uint32_t delay) {
+void demo_with_delay(const commands_t & cmd, uint32_t delay) {
     printf("delay: %d\n", delay);
-    pio_pwm_set_delay(piostep, sm, delay);
+    motor1.pio_pwm_set_delay(delay);
     for(auto c : cmd) {
-        // printf("Steps = %d\n", c.steps);
-        pio_stepper_set_steps(piostep, sm, c.steps, c.reverse);
+        motor1.pio_stepper_set_steps(c);
     }
 }
 
-void full_demo(const std::span<command> & cmd) {
+void full_demo(const commands_t & cmd) {
     commands_completed = 0U;
     
     printf("running on sm %d, with interrupt %d\n", sm, stepper_PIO_IRQ_DONE);
@@ -202,7 +186,7 @@ void full_demo(const std::span<command> & cmd) {
 int main() {
 
     init_everything();
-    std::array<command, 6> cmd{{
+    std::array<stepper::command, 6> cmd{{
         {200 * microstep_multiplier, true}, 
         {200 * microstep_multiplier, false},
         {200 * microstep_multiplier, false},
@@ -212,7 +196,6 @@ int main() {
     };
 
     full_demo(cmd);
-
 
     return 0;
 }
