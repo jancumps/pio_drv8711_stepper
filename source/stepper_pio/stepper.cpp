@@ -7,6 +7,8 @@ module;
 export module stepper;
 export namespace stepper {
 
+/*  Stepper motor command wrapper
+*/
 class command {
 public:
     command(uint32_t steps, bool reverse) : _cmd(steps << 1 | (reverse ? 0 : 1)) {
@@ -18,6 +20,11 @@ private:
     uint32_t _cmd;
 };
 
+/*  Stepper motor wrapper for PIO state machine
+    this class can be used as object,
+    but if prefered, the static fuctions can be used without creating an object, 
+    if developer preferes API style development.
+*/
 class stepper {
 public:
     stepper(pio_hw_t *pio, uint sm) : _pio(pio), _sm(sm) {}
@@ -28,12 +35,11 @@ public:
     }
 
     // Write `steps` to TX FIFO. State machine will copy this into X.
-    // max steps taken is 2147483647 (highest number that fits in 31 bits)
     static inline void pio_stepper_set_steps(PIO pio, uint sm, uint32_t steps, bool reverse) {
         pio_sm_put_blocking(pio, sm, command(steps, reverse));
     }
 
-    // call when the PIO is free. It interferes with activities
+    // call when the state machine is free. It interferes with activities
     static void pio_pwm_set_delay(PIO pio, uint sm, uint32_t delay) {
         pio_sm_set_enabled(pio, sm, false);
         pio_sm_put(pio, sm, delay);
@@ -47,8 +53,8 @@ public:
         pio_stepper_set_steps(_pio, _sm, cmd);
     }
 
-    // call when the PIO is free. It interferes with activities
-    void pio_pwm_set_delay(uint32_t delay) {
+    // call when the state machine is free. It interferes with activities
+    inline void pio_pwm_set_delay(uint32_t delay) {
         pio_pwm_set_delay(_pio, _sm, delay);
     }
 
@@ -56,6 +62,5 @@ private:
     pio_hw_t * _pio;
     uint _sm;
 };
-
 
 } // namespace stepper
