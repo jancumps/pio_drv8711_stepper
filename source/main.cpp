@@ -16,7 +16,7 @@ import drv8711_config;
 import stepper;
 import pio_irq_util;
 
-// #define MICROSTEP_8
+#define MICROSTEP_8
 // #undef MICROSTEP_8
 
 const uint nsleep = 14U;
@@ -31,10 +31,8 @@ const uint pio_irq = 0;
 
 const uint sm = 2U;
 
-volatile uint commands_completed = 0U;
-
 #ifdef MICROSTEP_8
-const float clock_divider = 2; // works well for 8 microsteps
+const float clock_divider = 3; // works well for 8 microsteps
 const uint microstep_multiplier = 8;
 #else
 const float clock_divider = 16; // works well for no microsteps
@@ -45,8 +43,8 @@ stepper::stepper_interrupt motor1(piostep, sm);
 
 class wakeup_drv8711 { // driver out of sleep as long as object in scope
 public:    
-    inline wakeup_drv8711() { gpio_put(nsleep, 1); }
-    inline ~wakeup_drv8711() { gpio_put(nsleep, 0); }
+     wakeup_drv8711() { gpio_put(nsleep, 1); }
+     ~wakeup_drv8711() { gpio_put(nsleep, 0); }
 };
 
 static inline void cs_drive(bool high) {
@@ -110,8 +108,7 @@ void init_pio() {
     uint offset = pio_add_program(piostep, &stepper_program);
     printf("Loaded program at %d\n", offset);
 
-    motor1.set_interrupt(pio_irq, 
-        stepper::stepper_interrupt::stepper_interrupt_manager::interrupt_handler_POI1, true);
+    motor1.set_interrupt(pio_irq, true);
 
     stepper_program_init(piostep, sm, offset, dir, clock_divider);
     pio_sm_set_enabled(piostep, sm, true);
@@ -139,54 +136,62 @@ void notify_me(stepper::stepper_interrupt &stepper) {
 
 void demo_with_delay(const commands_t & cmd, uint32_t delay) {
     printf("delay: %d\n", delay);
-    motor1.pio_pwm_set_delay(delay);
+    motor1.set_delay(delay);
     for(auto c : cmd) {
-        motor1.pio_stepper_set_steps(c);
+        motor1.set_steps(c);
     }
 }
 
 void full_demo(const commands_t & cmd) {
+    // wake up the stepper driver
+    wakeup_drv8711 w;
+    sleep_ms(1); // see datasheet
 
-    motor1.set_callback(notify_me);
-    
     printf("running on sm %d, with interrupt %d\n", sm, stepper_PIO_IRQ_DONE);
     int command_count = cmd.size();
-    wakeup_drv8711 w; // wake up the stepper driver
-    sleep_ms(1); // see datasheet
     
     demo_with_delay(cmd, 4300);
-    
     while(motor1.commands() < command_count ) {}
+    printf("interrupts expected: %d, received %d\n", command_count, motor1.commands());
     motor1.reset_commands();
-    printf("interrupts expected: %d, received %d\n", command_count, commands_completed);
-    sleep_ms(500); // give enough time to complete the action
+    sleep_ms(500); // pause for demo purpose
     
     demo_with_delay(cmd, 7000);
     while(motor1.commands() < command_count ) {}
+    printf("interrupts expected: %d, received %d\n", command_count, motor1.commands());
     motor1.reset_commands();
-    printf("interrupts expected: %d, received %d\n", command_count, commands_completed);
-    sleep_ms(500); // give enough time to complete the action
+    sleep_ms(500); // pause for demo purpose
     
     demo_with_delay(cmd, 9000);
     while(motor1.commands() < command_count ) {}
+    printf("interrupts expected: %d, received %d\n", command_count, motor1.commands());
     motor1.reset_commands();
-    printf("interrupts expected: %d, received %d\n", command_count, commands_completed);
+    sleep_ms(500); // pause for demo purpose
+
+    demo_with_delay(cmd, 20000);
+    while(motor1.commands() < command_count ) {}
+    printf("interrupts expected: %d, received %d\n", command_count, motor1.commands());
+    motor1.reset_commands();
 }
 
 int main() {
 
     init_everything();
-    std::array<stepper::command, 6> cmd{{
-        {200 * microstep_multiplier, true}, 
-        {200 * microstep_multiplier, false},
-        {200 * microstep_multiplier, false},
-        {400 * microstep_multiplier, false},
-        {250 * microstep_multiplier, true},
-        {350 * microstep_multiplier, true}}
+    std::array<stepper::command, 7> cmd{{
+        {20 * microstep_multiplier, true}, 
+        {20 * microstep_multiplier, false},
+        {20 * microstep_multiplier, false},
+        {40 * microstep_multiplier, false},
+        {25 * microstep_multiplier, true},
+        {35 * microstep_multiplier, true},
+        {200 * microstep_multiplier, true}}
     };
 
-    full_demo(cmd);
+    motor1.set_callback(notify_me); 
 
-    while (true) {}
+    while (true) {
+        full_demo(cmd);
+        sleep_ms(500); // cool off
+    }
     return 0;
 }
