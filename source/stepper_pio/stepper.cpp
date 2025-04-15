@@ -68,7 +68,10 @@ protected:
     uint _sm;
 };
 
+
 class stepper_interrupt : public stepper {
+    typedef void (*notifier_t)(stepper_interrupt&);
+
 public:
     /*
     PIO interrupts can't call object members, 
@@ -87,7 +90,6 @@ public:
             return old != nullptr;
         }
 
-    private:
         static void interrupt_handler_POI0() {
             // TODO : how do I get at the PIO?
             uint sm = pio_irq_util::sm_from_interrupt(pio0->irq, stepper_PIO_IRQ_DONE);
@@ -116,44 +118,68 @@ public:
             }
         }
 #endif        
-    
-    public:
+
+    private:
         // keep pointer to all possible objects
         static std::array<stepper_interrupt *, NUM_PIOS * 4> _steppers;
-        // static stepper_interrupt * _steppers[NUM_PIOS * 4];
-    private:
         static inline size_t index(PIO pio, uint sm) { return PIO_NUM(pio) * 4 + sm; }
-    };
-    
+    };   
 
 public:
-    stepper_interrupt(PIO pio, uint sm) : stepper(pio,sm), _steps(0U) {
+
+
+public:
+    stepper_interrupt(PIO pio, uint sm) : stepper(pio,sm), _commands(0U),
+        _callback(nullptr) {
         stepper_interrupt_manager::set_stepper(_pio, _sm, this);
     }
+
     virtual ~stepper_interrupt() {
         stepper_interrupt_manager::set_stepper(_pio, _sm, nullptr);
     }
 
-    inline uint steps() const { return _steps; }
-    inline void reset_steps() { _steps = 0U; }
-    inline void set_interrupt(uint irq_num, irq_handler_t  handler, bool enable) {
-        // TODO set channel here too
+    inline uint commands() const { return _commands; }
+
+    inline void reset_commands() { _commands = 0U; }
+
+    void set_interrupt(uint irq_channel, irq_handler_t  handler, bool enable) {
+        assert (irq_channel < 2); // develop check that we use 0 or 1 only
+        uint irq_num = PIO0_IRQ_0 + 2 * PIO_NUM(_pio) + irq_channel;
+        
+        if(irq_channel == 0) {
+            pio_set_irq0_source_enabled(_pio, pio_irq_util::interrupt_source(pis_interrupt0, 
+                pio_irq_util::relative_interrupt(stepper_PIO_IRQ_DONE, _sm)), true);
+        } else {
+            pio_set_irq1_source_enabled(_pio, pio_irq_util::interrupt_source(pis_interrupt0, 
+                pio_irq_util::relative_interrupt(stepper_PIO_IRQ_DONE, _sm)), true);
+        }
+
         irq_set_exclusive_handler(irq_num, handler);  //Set the handler in the NVIC
         if (enable) {
             irq_set_enabled(irq_num, true);
         }
     }
+
     void handler() {
         uint ir = pio_irq_util::relative_interrupt(stepper_PIO_IRQ_DONE, _sm);
         assert(_pio->irq == 1 << ir); // develop check: interrupt is from the correct state machine
-        _steps = _steps + 1;
+        _commands = _commands + 1;
         pio_interrupt_clear(_pio, ir);
+        if (_callback != nullptr) {
+            (_callback)( *this);
+        }
     }
+
+    void set_callback(notifier_t callback) {
+        _callback = callback;
+    }
+
 private:
-    volatile uint _steps; // updated by interrupt handler
-//    static stepper_interrupt_manager _interrupt_mgr;
+    volatile uint _commands; // updated by interrupt handler
+    notifier_t _callback;
 };
 
+// static data member must be initialised outside of the class, or linker will not have it
 std::array<stepper_interrupt *, NUM_PIOS * 4> stepper_interrupt::stepper_interrupt_manager::_steppers;
 
 } // namespace stepper

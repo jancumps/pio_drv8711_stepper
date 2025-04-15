@@ -26,11 +26,8 @@ const uint step = 5U;
 
 // config what PIO and IRQ channel to use
 const auto piostep = pio1;
-// use irq channel 0 of the correct PIO:
-const uint pio_irq = PIO1_IRQ_0;
-// also use the correct pio_set_irqX_source_enabled
-// in the source code:
-#define PIO_SET_SOURCE_ENABLED pio_set_irq0_source_enabled
+// use pio irq channel 0. Can be 0 or 1
+const uint pio_irq = 0;
 
 const uint sm = 2U;
 
@@ -109,27 +106,12 @@ void init_drv8711_gpio_hw() {
 // ================================================================
 // PIO init
 
-void pio_irq_handler(void){
-    uint ir = pio_irq_util::relative_interrupt(stepper_PIO_IRQ_DONE, sm);
-    if(pio_interrupt_get(piostep, ir)) {
-        assert(piostep->irq == 1 << ir); // develop check: interrupt is from the correct state machine
-        printf("interrupt %d from sm %d\n", stepper_PIO_IRQ_DONE, pio_irq_util::sm_from_interrupt(piostep->irq, stepper_PIO_IRQ_DONE));
-        // TODO improve: I should always clear the interrupt - or accept failure and die
-        pio_interrupt_clear(piostep, ir);
-        commands_completed = commands_completed + 1;
-    }
-}
-
 void init_pio() {
     uint offset = pio_add_program(piostep, &stepper_program);
     printf("Loaded program at %d\n", offset);
 
-    PIO_SET_SOURCE_ENABLED(
-        piostep, pio_irq_util::interrupt_source(pis_interrupt0, 
-            pio_irq_util::relative_interrupt(stepper_PIO_IRQ_DONE, sm)), true); 
-
-    irq_set_exclusive_handler(pio_irq, pio_irq_handler);  //Set the handler in the NVIC
-    irq_set_enabled(pio_irq, true);
+    motor1.set_interrupt(pio_irq, 
+        stepper::stepper_interrupt::stepper_interrupt_manager::interrupt_handler_POI1, true);
 
     stepper_program_init(piostep, sm, offset, dir, clock_divider);
     pio_sm_set_enabled(piostep, sm, true);
@@ -149,6 +131,12 @@ void init_everything() {
 
 using commands_t = std::span<stepper::command>;	
 
+void notify_me(stepper::stepper_interrupt &stepper) {
+    if (&motor1 == &stepper) {
+        printf("motor1 executed command %d\n", motor1.commands());
+    }
+}
+
 void demo_with_delay(const commands_t & cmd, uint32_t delay) {
     printf("delay: %d\n", delay);
     motor1.pio_pwm_set_delay(delay);
@@ -158,7 +146,8 @@ void demo_with_delay(const commands_t & cmd, uint32_t delay) {
 }
 
 void full_demo(const commands_t & cmd) {
-    commands_completed = 0U;
+
+    motor1.set_callback(notify_me);
     
     printf("running on sm %d, with interrupt %d\n", sm, stepper_PIO_IRQ_DONE);
     int command_count = cmd.size();
@@ -166,21 +155,22 @@ void full_demo(const commands_t & cmd) {
     sleep_ms(1); // see datasheet
     
     demo_with_delay(cmd, 4300);
-    while(commands_completed < command_count) {}
+    
+    while(motor1.commands() < command_count ) {}
+    motor1.reset_commands();
     printf("interrupts expected: %d, received %d\n", command_count, commands_completed);
-    commands_completed = 0U;
     sleep_ms(500); // give enough time to complete the action
     
     demo_with_delay(cmd, 7000);
-    while(commands_completed < command_count) {}
+    while(motor1.commands() < command_count ) {}
+    motor1.reset_commands();
     printf("interrupts expected: %d, received %d\n", command_count, commands_completed);
-    commands_completed = 0U;
     sleep_ms(500); // give enough time to complete the action
     
     demo_with_delay(cmd, 9000);
-    while(commands_completed < command_count) {}
+    while(motor1.commands() < command_count ) {}
+    motor1.reset_commands();
     printf("interrupts expected: %d, received %d\n", command_count, commands_completed);
-    commands_completed = 0U;
 }
 
 int main() {
@@ -197,5 +187,6 @@ int main() {
 
     full_demo(cmd);
 
+    while (true) {}
     return 0;
 }
