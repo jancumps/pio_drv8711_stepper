@@ -44,7 +44,7 @@ const float clock_divider = 16; // works well for no microsteps
 const uint microstep_multiplier = 1;
 #endif
 
-stepper::stepper motor1(piostep, sm);
+stepper::stepper_interrupt motor1(piostep, sm);
 
 class wakeup_drv8711 { // driver out of sleep as long as object in scope
 public:    
