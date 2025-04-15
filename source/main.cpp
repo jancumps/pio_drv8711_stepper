@@ -65,6 +65,7 @@ void init_drv8711_settings() {
     drv8711::reg_ctrl.mode = 0x0003; // MODE 8 microsteps
     //drv8711::reg_torque.torque = 0x00ff;
     #endif
+    drv8711::reg_torque.torque = 0x0020; // try to run cooler
     // and config over SPI
     spi_write(drv8711::reg_ctrl);
     spi_write(drv8711::reg_torque);
