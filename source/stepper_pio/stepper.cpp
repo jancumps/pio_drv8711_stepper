@@ -89,15 +89,15 @@ public:
         // be replaced and will no longer receive interrupts
         static bool set_stepper(PIO pio, uint sm, stepper_interrupt * stepper) {
             size_t idx = index(pio, sm);
-            stepper_interrupt *old = _steppers[idx];
-            _steppers[idx] = stepper;
+            stepper_interrupt *old = steppers_[idx];
+            steppers_[idx] = stepper;
             return old != nullptr;
         }
 
         static void interrupt_handler_PIO0() {
             // TODO : how do I get at the PIO?
             uint sm = pio_irq_util::sm_from_interrupt(pio0->irq, stepper_PIO_IRQ_DONE);
-            stepper_interrupt *stepper =  _steppers[index(pio0, sm)];
+            stepper_interrupt *stepper =  steppers_[index(pio0, sm)];
             if (stepper != nullptr) {
                 stepper -> handler();
             }
@@ -106,7 +106,7 @@ public:
         static void interrupt_handler_PIO1() {
             // TODO : how do I get at the PIO?
             uint sm = pio_irq_util::sm_from_interrupt(pio1->irq, stepper_PIO_IRQ_DONE);
-            stepper_interrupt *stepper =  _steppers[index(pio1, sm)];
+            stepper_interrupt *stepper =  steppers_[index(pio1, sm)];
             if (stepper != nullptr) {
                 stepper -> handler();
             }
@@ -116,7 +116,7 @@ public:
         static void interrupt_handler_PIO2() {
             // TODO : how do I get at the PIO?
             uint sm = pio_irq_util::sm_from_interrupt(pio2->irq, stepper_PIO_IRQ_DONE);
-            stepper_interrupt *stepper =  _steppers.at[index(pio2, sm)];
+            stepper_interrupt *stepper =  steppers_.at[index(pio2, sm)];
             if (stepper != nullptr) {
                 stepper -> handler();
             }
@@ -125,7 +125,7 @@ public:
 
     private:
         // keep pointer to all possible objects
-        static std::array<stepper_interrupt *, NUM_PIOS * 4> _steppers;
+        static std::array<stepper_interrupt *, NUM_PIOS * 4> steppers_;
         static inline size_t index(PIO pio, uint sm) { return PIO_NUM(pio) * 4 + sm; }
     };   
 
@@ -196,6 +196,6 @@ private:
 };
 
 // static data member must be initialised outside of the class, or linker will not have it
-std::array<stepper_interrupt *, NUM_PIOS * 4> stepper_interrupt::stepper_interrupt_manager::_steppers;
+std::array<stepper_interrupt *, NUM_PIOS * 4> stepper_interrupt::stepper_interrupt_manager::steppers_;
 
 } // namespace stepper
