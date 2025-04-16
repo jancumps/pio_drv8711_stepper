@@ -75,8 +75,7 @@ protected:
     and / or it can report the number of commands executed
 */
 class stepper_interrupt : public stepper {
-    typedef void (*notifier_t)(stepper_interrupt&);
-
+    using notifier_t = void (*)(stepper_interrupt&); // callback definition
 public:
     /*
     PIO interrupts can't call object members, 
