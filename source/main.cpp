@@ -39,7 +39,7 @@ const float clock_divider = 16; // works well for no microsteps
 const uint microstep_multiplier = 1;
 #endif
 
-stepper::stepper_interrupt motor1(piostep, sm);
+stepper::stepper_callback_controller motor1(piostep, sm);
 
 class wakeup_drv8711 { // driver out of sleep as long as object in scope
 public:    
@@ -129,7 +129,7 @@ void init_everything() {
 
 using commands_t = std::span<stepper::command>;	
 
-void notify_me(stepper::stepper_interrupt &stepper) {
+void on_complete(stepper::stepper_callback_controller &stepper) {
     if (&motor1 == &stepper) {
         printf("motor1 executed command %d\n", motor1.commands());
     }
@@ -188,7 +188,7 @@ int main() {
         {200 * microstep_multiplier, true}}
     };
 
-    motor1.set_callback(notify_me); 
+    motor1.on_complete_callback(on_complete); 
 
     while (true) {
         full_demo(cmd);

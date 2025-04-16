@@ -30,10 +30,10 @@ private:
     but if prefered, the static fuctions can be used without creating an object, 
     if developer preferes API style development.
 */
-class stepper {
+class stepper_controller {
 public:
-    stepper(PIO pio, uint sm) : pio_(pio), sm_(sm) {}
-    virtual ~stepper() {}
+    stepper_controller(PIO pio, uint sm) : pio_(pio), sm_(sm) {}
+    virtual ~stepper_controller() {}
 
     // Write `steps` to TX FIFO. State machine will copy this into X
     static inline void set_steps(PIO pio, uint sm, const command& cmd) {
@@ -74,8 +74,8 @@ protected:
     It can notify the caller that a command is finished,
     and / or it can report the number of commands executed
 */
-class stepper_interrupt : public stepper {
-    using notifier_t = void (*)(stepper_interrupt&); // callback definition
+class stepper_callback_controller : public stepper_controller {
+    using notifier_t = void (*)(stepper_callback_controller&); // callback definition
 public:
     /*
     PIO interrupts can't call object members, 
@@ -86,9 +86,9 @@ public:
     class stepper_interrupt_manager {
     public:        // if an object is currently handling a pio + sm combination, it will 
         // be replaced and will no longer receive interrupts
-        static bool set_stepper(PIO pio, uint sm, stepper_interrupt * stepper) {
+        static bool set_stepper(PIO pio, uint sm, stepper_callback_controller * stepper) {
             size_t idx = index(pio, sm);
-            stepper_interrupt *old = steppers_[idx];
+            stepper_callback_controller *old = steppers_[idx];
             steppers_[idx] = stepper;
             return old != nullptr;
         }
@@ -96,7 +96,7 @@ public:
         static void interrupt_handler_PIO0() {
             // TODO : how do I get at the PIO?
             uint sm = pio_irq_util::sm_from_interrupt(pio0->irq, stepper_PIO_IRQ_DONE);
-            stepper_interrupt *stepper =  steppers_[index(pio0, sm)];
+            stepper_callback_controller *stepper =  steppers_[index(pio0, sm)];
             if (stepper != nullptr) {
                 stepper -> handler();
             }
@@ -105,7 +105,7 @@ public:
         static void interrupt_handler_PIO1() {
             // TODO : how do I get at the PIO?
             uint sm = pio_irq_util::sm_from_interrupt(pio1->irq, stepper_PIO_IRQ_DONE);
-            stepper_interrupt *stepper =  steppers_[index(pio1, sm)];
+            stepper_callback_controller *stepper =  steppers_[index(pio1, sm)];
             if (stepper != nullptr) {
                 stepper -> handler();
             }
@@ -124,17 +124,17 @@ public:
 
     private:
         // keep pointer to all possible objects
-        static std::array<stepper_interrupt *, NUM_PIOS * 4> steppers_;
+        static std::array<stepper_callback_controller *, NUM_PIOS * 4> steppers_;
         static inline size_t index(PIO pio, uint sm) { return PIO_NUM(pio) * 4 + sm; }
     };   
 
 public:
-    stepper_interrupt(PIO pio, uint sm) : stepper(pio,sm), commands_(0U),
+    stepper_callback_controller(PIO pio, uint sm) : stepper_controller(pio,sm), commands_(0U),
         callback_(nullptr) {
         stepper_interrupt_manager::set_stepper(pio_, sm_, this);
     }
 
-    virtual ~stepper_interrupt() {
+    virtual ~stepper_callback_controller() {
         stepper_interrupt_manager::set_stepper(pio_, sm_, nullptr);
     }
 
@@ -175,7 +175,7 @@ public:
         }
     }
 
-    void set_callback(notifier_t callback) {
+    void on_complete_callback(notifier_t callback) {
         callback_ = callback;
     }
 
@@ -195,6 +195,6 @@ private:
 };
 
 // static data member must be initialised outside of the class, or linker will not have it
-std::array<stepper_interrupt *, NUM_PIOS * 4> stepper_interrupt::stepper_interrupt_manager::steppers_;
+std::array<stepper_callback_controller *, NUM_PIOS * 4> stepper_callback_controller::stepper_interrupt_manager::steppers_;
 
 } // namespace stepper
