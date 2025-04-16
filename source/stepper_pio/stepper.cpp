@@ -69,6 +69,11 @@ protected:
     uint _sm;
 };
 
+/*  Stepper motor for PIO state machine, 
+    with interrupt and notification support:
+    It can notify the caller that a command is finished,
+    and / or it can report the number of commands executed
+*/
 class stepper_interrupt : public stepper {
     typedef void (*notifier_t)(stepper_interrupt&);
 
