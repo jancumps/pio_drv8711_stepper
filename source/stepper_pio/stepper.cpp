@@ -16,13 +16,13 @@ export namespace stepper {
 */
 class command {
 public:
-    inline command(uint32_t steps, bool reverse) : _cmd(steps << 1 | (reverse ? 0 : 1)) {
+    inline command(uint32_t steps, bool reverse) : cmd_(steps << 1 | (reverse ? 0 : 1)) {
         // develop assertion: max steps taken is 2147483647 (highest number that fits in 31 bits)
         assert(steps <= (UINT32_MAX >> 1));
     }
-    inline operator uint32_t() const { return _cmd; }
+    inline operator uint32_t() const { return cmd_; }
 private:
-    uint32_t _cmd;
+    uint32_t cmd_;
 };
 
 /*  Stepper motor wrapper for PIO state machine
@@ -32,7 +32,7 @@ private:
 */
 class stepper {
 public:
-    stepper(PIO pio, uint sm) : _pio(pio), _sm(sm) {}
+    stepper(PIO pio, uint sm) : pio_(pio), sm_(sm) {}
     virtual ~stepper() {}
 
     // Write `steps` to TX FIFO. State machine will copy this into X
@@ -56,17 +56,17 @@ public:
 
     // Write `steps` to TX FIFO. State machine will copy this into X
     inline void set_steps(const command& cmd) {
-        set_steps(_pio, _sm, cmd);
+        set_steps(pio_, sm_, cmd);
     }
 
     // call when the state machine is free. It interferes with activities
     inline void set_delay(uint32_t delay) {
-        set_delay(_pio, _sm, delay);
+        set_delay(pio_, sm_, delay);
     }
 
 protected:
-    PIO _pio;
-    uint _sm;
+    PIO pio_;
+    uint sm_;
 };
 
 /*  Stepper motor for PIO state machine, 
@@ -130,33 +130,33 @@ public:
     };   
 
 public:
-    stepper_interrupt(PIO pio, uint sm) : stepper(pio,sm), _commands(0U),
-        _callback(nullptr) {
-        stepper_interrupt_manager::set_stepper(_pio, _sm, this);
+    stepper_interrupt(PIO pio, uint sm) : stepper(pio,sm), commands_(0U),
+        callback_(nullptr) {
+        stepper_interrupt_manager::set_stepper(pio_, sm_, this);
     }
 
     virtual ~stepper_interrupt() {
-        stepper_interrupt_manager::set_stepper(_pio, _sm, nullptr);
+        stepper_interrupt_manager::set_stepper(pio_, sm_, nullptr);
     }
 
-    inline uint commands() const { return _commands; }
+    inline uint commands() const { return commands_; }
 
-    inline void reset_commands() { _commands = 0U; }
+    inline void reset_commands() { commands_ = 0U; }
 
     void set_interrupt(uint irq_channel, bool enable) {
         assert (irq_channel < 2); // develop check that we use 0 or 1 only
-        uint irq_num = PIO0_IRQ_0 + 2 * PIO_NUM(_pio) + irq_channel;
+        uint irq_num = PIO0_IRQ_0 + 2 * PIO_NUM(pio_) + irq_channel;
         irq_handler_t handler = nullptr;
 
         if (irq_channel == 0) {
-            pio_set_irq0_source_enabled(_pio, pio_irq_util::interrupt_source(pis_interrupt0, 
-                pio_irq_util::relative_interrupt(stepper_PIO_IRQ_DONE, _sm)), true);
+            pio_set_irq0_source_enabled(pio_, pio_irq_util::interrupt_source(pis_interrupt0, 
+                pio_irq_util::relative_interrupt(stepper_PIO_IRQ_DONE, sm_)), true);
         } else {
-            pio_set_irq1_source_enabled(_pio, pio_irq_util::interrupt_source(pis_interrupt0, 
-                pio_irq_util::relative_interrupt(stepper_PIO_IRQ_DONE, _sm)), true);
+            pio_set_irq1_source_enabled(pio_, pio_irq_util::interrupt_source(pis_interrupt0, 
+                pio_irq_util::relative_interrupt(stepper_PIO_IRQ_DONE, sm_)), true);
         }
 
-        switch (PIO_NUM(_pio)) {
+        switch (PIO_NUM(pio_)) {
         case 0:
             handler = stepper_interrupt_manager::interrupt_handler_PIO0;
             break;
@@ -177,22 +177,22 @@ public:
     }
 
     void set_callback(notifier_t callback) {
-        _callback = callback;
+        callback_ = callback;
     }
 
 private:
     void handler() {
-        uint ir = pio_irq_util::relative_interrupt(stepper_PIO_IRQ_DONE, _sm);
-        assert(_pio->irq == 1 << ir); // develop check: interrupt is from the correct state machine
-        _commands = _commands + 1;
-        pio_interrupt_clear(_pio, ir);
-        if (_callback != nullptr) {
-            (_callback)( *this);
+        uint ir = pio_irq_util::relative_interrupt(stepper_PIO_IRQ_DONE, sm_);
+        assert(pio_->irq == 1 << ir); // develop check: interrupt is from the correct state machine
+        commands_ = commands_ + 1;
+        pio_interrupt_clear(pio_, ir);
+        if (callback_ != nullptr) {
+            (callback_)( *this);
         }
     }
 
-    volatile uint _commands; // updated by interrupt handler
-    notifier_t _callback;
+    volatile uint commands_; // updated by interrupt handler
+    notifier_t callback_;
 };
 
 // static data member must be initialised outside of the class, or linker will not have it
