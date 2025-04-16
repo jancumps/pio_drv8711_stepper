@@ -142,7 +142,7 @@ public:
 
     inline void reset_commands() { commands_ = 0U; }
 
-    void set_interrupt(uint irq_channel, bool enable) {
+    void register_pio_interrupt(uint irq_channel, bool enable) {
         assert (irq_channel < 2); // develop check that we use 0 or 1 only
         uint irq_num = PIO0_IRQ_0 + 2 * PIO_NUM(pio_) + irq_channel;
         irq_handler_t handler = nullptr;

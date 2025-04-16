@@ -109,7 +109,7 @@ void init_pio() {
     uint offset = pio_add_program(piostep, &stepper_program);
     printf("Loaded program at %d\n", offset);
 
-    motor1.set_interrupt(pio_irq, true);
+    motor1.register_pio_interrupt(pio_irq, true);
 
     stepper_program_init(piostep, sm, offset, dir, clock_divider);
     pio_sm_set_enabled(piostep, sm, true);
