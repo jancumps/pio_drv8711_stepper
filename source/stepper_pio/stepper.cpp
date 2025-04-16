@@ -36,12 +36,12 @@ public:
     virtual ~stepper_controller() {}
 
     // Write `steps` to TX FIFO. State machine will copy this into X
-    static inline void set_steps(PIO pio, uint sm, const command& cmd) {
+    static inline void take_steps(PIO pio, uint sm, const command& cmd) {
         pio_sm_put_blocking(pio, sm, cmd);
     }
 
     // Write `steps` to TX FIFO. State machine will copy this into X
-    static inline void set_steps(PIO pio, uint sm, uint32_t steps, bool reverse) {
+    static inline void take_steps(PIO pio, uint sm, uint32_t steps, bool reverse) {
         pio_sm_put_blocking(pio, sm, command(steps, reverse));
     }
 
@@ -56,7 +56,7 @@ public:
 
     // Write `steps` to TX FIFO. State machine will copy this into X
     inline void set_steps(const command& cmd) {
-        set_steps(pio_, sm_, cmd);
+        take_steps(pio_, sm_, cmd);
     }
 
     // call when the state machine is free. It interferes with activities
