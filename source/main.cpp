@@ -33,10 +33,10 @@ const uint sm = 2U;
 
 #ifdef MICROSTEP_8
 const float clock_divider = 3; // works well for 8 microsteps
-const uint microstep_multiplier = 8;
+const uint microstep_x = 8;
 #else
 const float clock_divider = 16; // works well for no microsteps
-const uint microstep_multiplier = 1;
+const uint microstep_x = 1;
 #endif
 
 stepper::stepper_callback_controller motor1(piostep, sm);
@@ -180,13 +180,13 @@ int main() {
 
     init_everything();
     std::array<stepper::command, 7> cmd{{
-        {20 * microstep_multiplier, true}, 
-        {20 * microstep_multiplier, false},
-        {20 * microstep_multiplier, false},
-        {40 * microstep_multiplier, false},
-        {25 * microstep_multiplier, true},
-        {35 * microstep_multiplier, true},
-        {200 * microstep_multiplier, true}}
+        {20 * microstep_x, true}, 
+        {20 * microstep_x, false},
+        {20 * microstep_x, false},
+        {40 * microstep_x, false},
+        {25 * microstep_x, true},
+        {35 * microstep_x, true},
+        {200 * microstep_x, true}}
     };
 
     motor1.on_complete_callback(on_complete); 
