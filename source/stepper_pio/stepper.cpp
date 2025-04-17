@@ -188,7 +188,7 @@ private:
     notifier_t callback_;
 };
 
-// static data member must be initialised outside of the class, or linker will not have it
+// static data member must be initialised outside of the class, or linker will not catch it
 std::array<stepper_callback_controller *, NUM_PIOS * 4> stepper_callback_controller::interrupt_manager::steppers_;
 
 } // namespace stepper
