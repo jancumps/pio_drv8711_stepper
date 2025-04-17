@@ -21,8 +21,7 @@ import pio_irq_util;
 
 const uint nsleep = 14U;
 const uint reset = 15U;
-const uint dir = 4U;
-const uint step = 5U;
+const uint dir = 4U; // implies that step is gpio 5
 
 // config what PIO and IRQ channel to use
 const auto piostep = pio1;
@@ -65,7 +64,7 @@ void init_drv8711_settings() {
     drv8711::reg_ctrl.mode = 0x0003; // MODE 8 microsteps
     drv8711::reg_torque.torque = 0x0020; // try to run cooler
     #else
-    drv8711::reg_torque.torque = 0x0050; // try to run cooler
+    drv8711::reg_torque.torque = 0x0040; // try to run cooler
     #endif
     // and config over SPI
     spi_write(drv8711::reg_ctrl);
