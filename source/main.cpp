@@ -16,11 +16,11 @@
 // all function or class to deal with this IC have drv8711 in the name
 // those are the only code parts that are stepper IC specific
 // if you have an otherdriver, that's what you have to replace.
-import drv8711;
-import drv8711_config; // pre-configured registers:
-import drv8711_pico;
+import drv8711; // registers
+import drv8711_config; // register pre-configuration
+import drv8711_pico; // Pico and project specific code
 
-import stepper;
+import stepper; // PIO stepper lib
 
 // #define MICROSTEP_8
 #undef MICROSTEP_8
@@ -61,6 +61,8 @@ void init_pio() {
 
 void init_everything() {
     stdio_init_all();
+
+    // drv8711 specific config and init
     drv8711_pico::init_drv8711_gpio_hw();
     drv8711_pico::init_drv8711_spi_hw();
     // override any default settings
@@ -71,6 +73,7 @@ void init_everything() {
     drv8711::reg_torque.torque = 0x0080; // try to run cooler
     #endif
     drv8711_pico::init_drv8711_settings();
+
     init_pio();
 }
 
@@ -97,7 +100,7 @@ void demo_with_delay(const commands_t & cmd, uint32_t delay) {
 }
 
 void full_demo(const commands_t & cmd) {
-    // wake up the stepper driver
+    // wake up the drv8711
     drv8711_pico::wakeup_drv8711 w;
     sleep_ms(1); // see datasheet
 
