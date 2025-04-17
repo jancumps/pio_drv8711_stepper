@@ -9,7 +9,7 @@
 #include <iterator>
 #include <span>
 
-// this code uses ti drv8711. But the stepper code is driver inependent.
+// this code uses ti drv8711. But the stepper code is driver independent.
 // the imports get the generic register definitions 
 // default configuaration, and
 // the Pico spi specific communication code.
