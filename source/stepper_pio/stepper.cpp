@@ -121,7 +121,7 @@ private:
         static void interrupt_handler_PIO2() {
             // TODO : how do I get at the PIO?
             uint sm = pio_irq_util::sm_from_interrupt(pio2->irq, stepper_PIO_IRQ_DONE);
-            stepper_interrupt *stepper =  steppers_.at[index_for(pio2, sm)];
+            stepper_callback_controller *stepper =  steppers_[index_for(pio2, sm)];
             if (stepper != nullptr) {
                 stepper -> handler();
             }
