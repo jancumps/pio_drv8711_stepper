@@ -11,16 +11,14 @@ import pio_irq_util;
 export module stepper;
 export namespace stepper {
 
+// max steps taken is 2147483647 (highest number that fits in 31 bits)
+
 /*  Stepper motor command wrapper
     lightweight 
 */
 class command {
 public:
-    inline command(uint32_t steps, bool reverse) : cmd_(steps << 1 | (reverse ? 0 : 1)) {
-        // develop assertion: max steps taken is 2147483647 (highest number that fits in 31 bits)
-        assert(steps <= (UINT32_MAX >> 1));
-    }
-
+    inline command(uint32_t steps, bool reverse) : cmd_(steps << 1 | (reverse ? 0 : 1)) {}
     inline operator uint32_t() const { return cmd_; }
 
 private:
@@ -35,7 +33,6 @@ private:
 class stepper_controller {
 public:
     stepper_controller(PIO pio, uint sm) : pio_(pio), sm_(sm) {}
-
     virtual ~stepper_controller() {}
 
     // Write `steps` to TX FIFO. State machine will copy this into X
@@ -45,7 +42,7 @@ public:
 
     // Write `steps` to TX FIFO. State machine will copy this into X
     static inline void take_steps(PIO pio, uint sm, uint32_t steps, bool reverse) {
-        pio_sm_put_blocking(pio, sm, command(steps, reverse));
+        take_steps(pio, sm, command(steps, reverse));
     }
 
     // call when the state machine is free. It interferes with activities
@@ -188,7 +185,7 @@ private:
     notifier_t callback_;
 };
 
-// static data member must be initialised outside of the class, or linker will not catch it
+// static data member must be initialised outside of the class, or the linker will not capture it
 std::array<stepper_callback_controller *, NUM_PIOS * 4> stepper_callback_controller::interrupt_manager::steppers_;
 
 } // namespace stepper
