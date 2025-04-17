@@ -42,7 +42,9 @@ const float clock_divider = 16; // works well for no microsteps
 const uint microstep_x = 1;
 #endif
 
-stepper::stepper_callback_controller motor1(piostep, sm);
+using motor_t = stepper::stepper_callback_controller;
+
+motor_t motor1(piostep, sm);
 
 // ================================================================
 // PIO init
@@ -81,13 +83,13 @@ void init_everything() {
 
 using commands_t = std::span<stepper::command>;	
 
-void on_complete(stepper::stepper_callback_controller &stepper) {
+void on_complete(motor_t &stepper) {
     if (&motor1 == &stepper) {
         printf("motor1 executed command %d\n", motor1.commands());
     }
 }
 
-void demo_with_delay(const commands_t & cmd, uint32_t delay) {
+void run_with_delay(const commands_t & cmd, uint32_t delay) {
     printf("delay: %d\n", delay);
     motor1.set_delay(delay);
     for(auto c : cmd) {
@@ -106,10 +108,10 @@ void full_demo(const commands_t & cmd) {
 
     printf("running on sm %d, with interrupt %d\n", sm, stepper_PIO_IRQ_DONE);
     
-    demo_with_delay(cmd, 4300);
-    demo_with_delay(cmd, 7000);
-    demo_with_delay(cmd, 9000);
-    demo_with_delay(cmd, 20000);
+    run_with_delay(cmd, 4300);
+    run_with_delay(cmd, 7000);
+    run_with_delay(cmd, 9000);
+    run_with_delay(cmd, 20000);
 }
 
 int main() {
