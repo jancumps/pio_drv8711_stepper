@@ -88,6 +88,8 @@ private:
     because this no longer a wrapper. We maintain state
     */
     class interrupt_manager {
+    private:
+        interrupt_manager() = delete;  // static classe. prevent instantiating.
     public:        
         // if an object is currently handling a pio + sm combination, it will 
         // be replaced and will no longer receive interrupts
