@@ -100,7 +100,7 @@ void demo_with_delay(const commands_t & cmd, uint32_t delay) {
 }
 
 void full_demo(const commands_t & cmd) {
-    // wake up the drv8711
+    // wake up the drv8711. It goes back to low power when this object leaves the scope
     drv8711_pico::wakeup_drv8711 w;
     sleep_ms(1); // see datasheet
 
