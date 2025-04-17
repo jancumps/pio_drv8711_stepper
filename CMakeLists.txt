@@ -17,9 +17,11 @@ target_sources(${CMAKE_PROJECT_NAME}
 target_sources(${CMAKE_PROJECT_NAME}
         PUBLIC
         FILE_SET cxx_modules TYPE CXX_MODULES FILES
+        # for drv8711
         ${CMAKE_CURRENT_SOURCE_DIR}/source/drv8711_driver/drv8711.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/drv8711_driver/drv8711_config.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/drv8711_pico.cpp
+        # end drv8711
         ${CMAKE_CURRENT_SOURCE_DIR}/source/stepper_pio/pio_irq_util.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/stepper_pio/stepper.cpp
 )
@@ -30,8 +32,10 @@ pico_generate_pio_header(${CMAKE_PROJECT_NAME}
 
 target_link_libraries( ${CMAKE_PROJECT_NAME}
         pico_stdlib
-        hardware_gpio
-        hardware_spi
         hardware_pio
+        hardware_gpio
+        # for drv8711
+        hardware_spi
+        # end drv8711
 )
 
