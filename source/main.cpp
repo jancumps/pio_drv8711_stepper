@@ -64,7 +64,7 @@ void init_drv8711_settings() {
     drv8711::reg_ctrl.mode = 0x0003; // MODE 8 microsteps
     drv8711::reg_torque.torque = 0x0020; // try to run cooler
     #else
-    drv8711::reg_torque.torque = 0x0040; // try to run cooler
+    drv8711::reg_torque.torque = 0x0080; // try to run cooler
     #endif
     // and config over SPI
     spi_write(drv8711::reg_ctrl);
@@ -141,6 +141,10 @@ void demo_with_delay(const commands_t & cmd, uint32_t delay) {
     for(auto c : cmd) {
         motor1.take_steps(c);
     }
+    while(motor1.commands() < cmd.size() ) {}
+    printf("interrupts expected: %d, received %d\n", cmd.size(), motor1.commands());
+    motor1.reset_commands();
+    sleep_ms(500); // pause for demo purpose    
 }
 
 void full_demo(const commands_t & cmd) {
@@ -149,30 +153,11 @@ void full_demo(const commands_t & cmd) {
     sleep_ms(1); // see datasheet
 
     printf("running on sm %d, with interrupt %d\n", sm, stepper_PIO_IRQ_DONE);
-    int command_count = cmd.size();
     
     demo_with_delay(cmd, 4300);
-    while(motor1.commands() < command_count ) {}
-    printf("interrupts expected: %d, received %d\n", command_count, motor1.commands());
-    motor1.reset_commands();
-    sleep_ms(500); // pause for demo purpose
-    
     demo_with_delay(cmd, 7000);
-    while(motor1.commands() < command_count ) {}
-    printf("interrupts expected: %d, received %d\n", command_count, motor1.commands());
-    motor1.reset_commands();
-    sleep_ms(500); // pause for demo purpose
-    
     demo_with_delay(cmd, 9000);
-    while(motor1.commands() < command_count ) {}
-    printf("interrupts expected: %d, received %d\n", command_count, motor1.commands());
-    motor1.reset_commands();
-    sleep_ms(500); // pause for demo purpose
-
     demo_with_delay(cmd, 20000);
-    while(motor1.commands() < command_count ) {}
-    printf("interrupts expected: %d, received %d\n", command_count, motor1.commands());
-    motor1.reset_commands();
 }
 
 int main() {
