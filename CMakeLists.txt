@@ -13,6 +13,7 @@ add_executable(${CMAKE_PROJECT_NAME})
 target_sources(${CMAKE_PROJECT_NAME}
         PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/source/main.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/stepper_pio/stepper_impl.cpp
 )
 target_sources(${CMAKE_PROJECT_NAME}
         PUBLIC
