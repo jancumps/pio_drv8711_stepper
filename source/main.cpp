@@ -66,12 +66,12 @@ void init_everything() {
     drv8711_pico::init_drv8711_gpio_hw();
     drv8711_pico::init_drv8711_spi_hw();
     // override any default settings
-    #ifdef MICROSTEP_8
+#ifdef MICROSTEP_8
     drv8711::reg_ctrl.mode = 0x0003; // MODE 8 microsteps
     drv8711::reg_torque.torque = 0x0020; // try to run cooler
-    #else
+#else
     drv8711::reg_torque.torque = 0x0080; // try to run cooler
-    #endif
+#endif
     drv8711_pico::init_drv8711_settings();
 
     init_pio();
