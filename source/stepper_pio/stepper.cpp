@@ -20,7 +20,9 @@ public:
         // develop assertion: max steps taken is 2147483647 (highest number that fits in 31 bits)
         assert(steps <= (UINT32_MAX >> 1));
     }
+
     inline operator uint32_t() const { return cmd_; }
+
 private:
     uint32_t cmd_;
 };
@@ -33,6 +35,7 @@ private:
 class stepper_controller {
 public:
     stepper_controller(PIO pio, uint sm) : pio_(pio), sm_(sm) {}
+
     virtual ~stepper_controller() {}
 
     // Write `steps` to TX FIFO. State machine will copy this into X
@@ -55,7 +58,7 @@ public:
     }
 
     // Write `steps` to TX FIFO. State machine will copy this into X
-    inline void set_steps(const command& cmd) {
+    inline void take_steps(const command& cmd) {
         take_steps(pio_, sm_, cmd);
     }
 
@@ -76,7 +79,8 @@ protected:
 */
 class stepper_callback_controller : public stepper_controller {
     using notifier_t = void (*)(stepper_callback_controller&); // callback definition
-public:
+    
+private:
     /*
     PIO interrupts can't call object members, 
     this sub class helps translating interrupts to the relevant object

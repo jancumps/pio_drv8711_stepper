@@ -6,9 +6,22 @@ see blog: [Stepper Motor Control with Raspberry Pico PI and DRV8711 driver- Part
 - 4 motors can be controlled per PIO
 - supports DRV8711 (but can be ported to any driver that supports PIN and DIR operation)
 - can handle as many commands as PIO FIFO accepts without waiting (default 8). Each command can autonomously handle 2147483647 steps, and the spin direction
+- can notify the calling program when an instruction is finished
 
 Example motor instruction batch of 6 instructions:  
 ```
+stepper::stepper_callback_controller motor1(piostep, sm);
+
+void on_complete(stepper::stepper_callback_controller &stepper) {
+    if (&motor1 == &stepper) {
+        printf("motor1 executed command %d\n", motor1.commands());
+    }
+}
+
+int main() {
+
+    motor1.on_complete_callback(on_complete);
+
     std::array<command, 6> cmd{{
         {200, true}, 
         {200, false},
@@ -18,13 +31,10 @@ Example motor instruction batch of 6 instructions:
         {350, true}}
     };
 
-    {
-        wakeup_drv8711 w; // wake up the stepper driver
-        sleep_ms(1); // see drv8711 datasheet
-        for(auto c : cmd) {
-            printf("Steps = %d\n", c.steps);
-            pio_stepper_set_steps(piostep, sm, c.steps, c.reverse);
-        }
+    motor1.set_delay(delay);
+    for(auto c : cmd) {
+        motor1.take_steps(c);
+    }
 
         // ...
 ```

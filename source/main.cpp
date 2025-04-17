@@ -139,7 +139,7 @@ void demo_with_delay(const commands_t & cmd, uint32_t delay) {
     printf("delay: %d\n", delay);
     motor1.set_delay(delay);
     for(auto c : cmd) {
-        motor1.set_steps(c);
+        motor1.take_steps(c);
     }
 }
 
