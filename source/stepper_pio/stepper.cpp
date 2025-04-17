@@ -16,7 +16,9 @@ export namespace stepper {
 */
 class command {
 public:
-    inline command(uint32_t steps, bool reverse) : cmd_(steps << 1 | (reverse ? 0 : 1)) {}
+    inline command(uint32_t steps, bool reverse) : cmd_(steps << 1 | (reverse ? 0 : 1)) {
+        assert(steps <= (UINT32_MAX >> 1)); 
+    }
     inline operator uint32_t() const { return cmd_; }
 private:
     uint32_t cmd_;
