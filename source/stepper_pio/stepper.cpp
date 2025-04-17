@@ -88,13 +88,15 @@ private:
     because this no longer a wrapper. We maintain state
     */
     class interrupt_manager {
-    public:        // if an object is currently handling a pio + sm combination, it will 
+    public:        
+        // if an object is currently handling a pio + sm combination, it will 
         // be replaced and will no longer receive interrupts
-        static bool register_stepper(PIO pio, uint sm, stepper_callback_controller * stepper) {
-            size_t idx = index_for(pio, sm);
+        // return false if an existing combination is replaced
+        static bool register_stepper(stepper_callback_controller * stepper, bool set) {
+            size_t idx = index_for(stepper->pio_, stepper->sm_);
             stepper_callback_controller *old = steppers_[idx];
-            steppers_[idx] = stepper;
-            return old != nullptr;
+            steppers_[idx] = set ? stepper : nullptr;
+            return set ? old == nullptr : true;
         }
 
         static void interrupt_handler_PIO0() {
@@ -135,11 +137,11 @@ private:
 public:
     stepper_callback_controller(PIO pio, uint sm) : stepper_controller(pio,sm), commands_(0U),
         callback_(nullptr) {
-        interrupt_manager::register_stepper(pio_, sm_, this);
+        interrupt_manager::register_stepper(this, true);
     }
 
     virtual ~stepper_callback_controller() {
-        interrupt_manager::register_stepper(pio_, sm_, nullptr);
+        interrupt_manager::register_stepper(this, false);
     }
 
     inline uint commands() const { return commands_; }
