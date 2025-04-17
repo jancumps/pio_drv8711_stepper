@@ -17,8 +17,9 @@ target_sources(${CMAKE_PROJECT_NAME}
 target_sources(${CMAKE_PROJECT_NAME}
         PUBLIC
         FILE_SET cxx_modules TYPE CXX_MODULES FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/drv8711/drv8711.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/drv8711/drv8711_config.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/drv8711_driver/drv8711.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/drv8711_driver/drv8711_config.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/drv8711_pico.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/stepper_pio/pio_irq_util.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/stepper_pio/stepper.cpp
 )

@@ -1,7 +1,6 @@
 #include <stdio.h>
 
 #include "pico/stdlib.h"
-#include "hardware/spi.h"
 
 #include "hardware/pio.h"
 #include "stepper.pio.h"
@@ -10,17 +9,22 @@
 #include <iterator>
 #include <span>
 
+// this code uses ti drv8711. But the stepper code is driver inependent.
+// the imports get the generic register definitions 
+// default configuaration, and
+// the Pico spi specific communication code.
+// all function or class to deal with this IC have drv8711 in the name
+// those are the only code parts that are stepper IC specific
+// if you have an otherdriver, that's what you have to replace.
 import drv8711;
-// pre-configured registers:
-import drv8711_config;
+import drv8711_config; // pre-configured registers:
+import drv8711_pico;
+
 import stepper;
-import pio_irq_util;
 
 // #define MICROSTEP_8
 #undef MICROSTEP_8
 
-const uint nsleep = 14U;
-const uint reset = 15U;
 const uint dir = 4U; // implies that step is gpio 5
 
 // config what PIO and IRQ channel to use
@@ -40,68 +44,6 @@ const uint microstep_x = 1;
 
 stepper::stepper_callback_controller motor1(piostep, sm);
 
-class wakeup_drv8711 { // driver out of sleep as long as object in scope
-public:    
-     wakeup_drv8711() { gpio_put(nsleep, 1); }
-     ~wakeup_drv8711() { gpio_put(nsleep, 0); }
-};
-
-static inline void cs_drive(bool high) {
-    asm volatile("nop \n nop \n nop"); // FIXME
-    gpio_put(PICO_DEFAULT_SPI_CSN_PIN, high? 1 : 0);
-    asm volatile("nop \n nop \n nop"); // FIXME
-}
-
-static void spi_write(const uint16_t &data) {
-    cs_drive(true); // drv8711 has CS active high
-    spi_write16_blocking(spi_default, &data, 1);
-    cs_drive(false);
-}
-
-void init_drv8711_settings() {
-    // override any default settings
-    #ifdef MICROSTEP_8
-    drv8711::reg_ctrl.mode = 0x0003; // MODE 8 microsteps
-    drv8711::reg_torque.torque = 0x0020; // try to run cooler
-    #else
-    drv8711::reg_torque.torque = 0x0080; // try to run cooler
-    #endif
-    // and config over SPI
-    spi_write(drv8711::reg_ctrl);
-    spi_write(drv8711::reg_torque);
-    spi_write(drv8711::reg_off);
-    spi_write(drv8711::reg_blank);
-    spi_write(drv8711::reg_decay);
-    spi_write(drv8711::reg_stall);
-    spi_write(drv8711::reg_drive);
-    spi_write(drv8711::reg_status);
-}
-
-void init_drv8711_spi_hw() {
-    // Enable SPI 0 at 1 MHz and connect to GPIOs
-    spi_init(spi_default, 1000 * 1000);
-    spi_set_format(spi_default, 16, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST); // 16 bit registers
-    gpio_set_function(PICO_DEFAULT_SPI_RX_PIN, GPIO_FUNC_SPI);
-    gpio_set_pulls(PICO_DEFAULT_SPI_RX_PIN, true, false); // drv8711 outputs are open drain
-    gpio_set_function(PICO_DEFAULT_SPI_SCK_PIN, GPIO_FUNC_SPI);
-    gpio_set_function(PICO_DEFAULT_SPI_TX_PIN, GPIO_FUNC_SPI);
-    // Chip select is active-high, so we'll initialise it to a driven-low state
-    gpio_init(PICO_DEFAULT_SPI_CSN_PIN);
-    gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
-    gpio_set_dir(PICO_DEFAULT_SPI_CSN_PIN, GPIO_OUT);
-}
-
-void init_drv8711_gpio_hw() {
-    // nsleep as output
-    gpio_init(nsleep);
-    gpio_put(nsleep, 0);
-    gpio_set_dir(nsleep, GPIO_OUT);
-    // reset as output
-    gpio_init(reset);
-    gpio_put(reset, 0);
-    gpio_set_dir(reset, GPIO_OUT);
-}
-
 // ================================================================
 // PIO init
 
@@ -119,9 +61,16 @@ void init_pio() {
 
 void init_everything() {
     stdio_init_all();
-    init_drv8711_gpio_hw();
-    init_drv8711_spi_hw();
-    init_drv8711_settings();
+    drv8711_pico::init_drv8711_gpio_hw();
+    drv8711_pico::init_drv8711_spi_hw();
+    // override any default settings
+    #ifdef MICROSTEP_8
+    drv8711::reg_ctrl.mode = 0x0003; // MODE 8 microsteps
+    drv8711::reg_torque.torque = 0x0020; // try to run cooler
+    #else
+    drv8711::reg_torque.torque = 0x0080; // try to run cooler
+    #endif
+    drv8711_pico::init_drv8711_settings();
     init_pio();
 }
 
@@ -149,7 +98,7 @@ void demo_with_delay(const commands_t & cmd, uint32_t delay) {
 
 void full_demo(const commands_t & cmd) {
     // wake up the stepper driver
-    wakeup_drv8711 w;
+    drv8711_pico::wakeup_drv8711 w;
     sleep_ms(1); // see datasheet
 
     printf("running on sm %d, with interrupt %d\n", sm, stepper_PIO_IRQ_DONE);
