@@ -101,36 +101,22 @@ private:
             return set ? old == nullptr : true;
         }
 
-        static void interrupt_handler_PIO0() {
-            // TODO : how do I get at the PIO?
-            uint sm = pio_irq_util::sm_from_interrupt(pio0->irq, stepper_PIO_IRQ_DONE);
-            stepper_callback_controller *stepper =  steppers_[index_for(pio0, sm)];
-            if (stepper != nullptr) {
-                stepper -> handler();
-            }
-        }
-    
-        static void interrupt_handler_PIO1() {
-            // TODO : how do I get at the PIO?
-            uint sm = pio_irq_util::sm_from_interrupt(pio1->irq, stepper_PIO_IRQ_DONE);
-            stepper_callback_controller *stepper =  steppers_[index_for(pio1, sm)];
-            if (stepper != nullptr) {
-                stepper -> handler();
-            }
-        }
-
+        // PIO API doesn't accept a callback with parameters, so I can't pass the PIO instance
+        // this is a reasonable solution without overhead
+        static inline void interrupt_handler_PIO0() { interrupt_handler(pio0); }    
+        static inline void interrupt_handler_PIO1() { interrupt_handler(pio1); }
 #if (NUM_PIOS > 2) // pico 2       
-        static void interrupt_handler_PIO2() {
-            // TODO : how do I get at the PIO?
-            uint sm = pio_irq_util::sm_from_interrupt(pio2->irq, stepper_PIO_IRQ_DONE);
-            stepper_callback_controller *stepper =  steppers_[index_for(pio2, sm)];
-            if (stepper != nullptr) {
-                stepper -> handler();
-            }
-        }
+        static inline void interrupt_handler_PIO2() { interrupt_handler(pio2); }
 #endif        
 
     private:
+        static void interrupt_handler(PIO pio) {
+            uint sm = pio_irq_util::sm_from_interrupt(pio->irq, stepper_PIO_IRQ_DONE);
+            stepper_callback_controller *stepper =  steppers_[index_for(pio, sm)];
+            if (stepper != nullptr) {
+                stepper -> handler();
+            }
+        }
         // keep pointer to all possible objects
         static std::array<stepper_callback_controller *, NUM_PIOS * 4> steppers_;
         static inline size_t index_for(PIO pio, uint sm) { return PIO_NUM(pio) * 4 + sm; }
