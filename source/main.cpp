@@ -16,8 +16,8 @@ import drv8711_config;
 import stepper;
 import pio_irq_util;
 
-#define MICROSTEP_8
-// #undef MICROSTEP_8
+// #define MICROSTEP_8
+#undef MICROSTEP_8
 
 const uint nsleep = 14U;
 const uint reset = 15U;
@@ -63,9 +63,10 @@ void init_drv8711_settings() {
     // override any default settings
     #ifdef MICROSTEP_8
     drv8711::reg_ctrl.mode = 0x0003; // MODE 8 microsteps
-    //drv8711::reg_torque.torque = 0x00ff;
-    #endif
     drv8711::reg_torque.torque = 0x0020; // try to run cooler
+    #else
+    drv8711::reg_torque.torque = 0x0050; // try to run cooler
+    #endif
     // and config over SPI
     spi_write(drv8711::reg_ctrl);
     spi_write(drv8711::reg_torque);
