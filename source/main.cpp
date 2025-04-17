@@ -13,7 +13,7 @@
 // the imports get the generic register definitions 
 // default configuaration, and
 // the Pico spi specific communication code.
-// all function or class to deal with this IC have drv8711 in the name
+// each function or class that deals with this IC has drv8711 in the name
 // those are the only code parts that are stepper IC specific
 // if you have an otherdriver, that's what you have to replace.
 import drv8711; // registers
