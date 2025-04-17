@@ -80,7 +80,7 @@ class stepper_callback_controller : public stepper_controller {
 private:
     /*
     PIO interrupts can't call object members, 
-    this sub class helps translating interrupts to the relevant object
+    this embedded class helps translating interrupts to the relevant object
     also enforces this restriction: one stepper_interrupt object per state machine
     because this no longer a wrapper. We maintain state
     */
