@@ -34,7 +34,6 @@ target_sources(${CMAKE_PROJECT_NAME}
 
 target_link_libraries( ${CMAKE_PROJECT_NAME}
         pico_stdlib
-        # hardware_pio
         hardware_gpio
         # for drv8711
         hardware_spi
