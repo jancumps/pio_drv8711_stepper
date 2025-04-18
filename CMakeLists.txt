@@ -9,6 +9,16 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fmodules-ts -fcommon")
 
 pico_sdk_init()
 
+include(FetchContent)
+
+FetchContent_Declare(stepper
+  GIT_REPOSITORY "https://github.com/jancumps/pio_stepper_lib.git"
+  GIT_TAG "origin/main"
+  SOURCE_SUBDIR =
+)
+FetchContent_MakeAvailable(stepper)
+set(stepper_PATH ${stepper_SOURCE_DIR})
+
 add_executable(${CMAKE_PROJECT_NAME})
 target_sources(${CMAKE_PROJECT_NAME}
         PUBLIC
@@ -24,27 +34,26 @@ target_sources(${CMAKE_PROJECT_NAME}
         # end drv8711
 )
 
-add_library(stepper)
-target_sources(stepper
+add_library(stepper_lib)
+target_sources(stepper_lib
         PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/stepper_pio/stepper_impl.cpp
+        ${stepper_PATH}/source/stepper_impl.cpp
 )
-target_sources(stepper
+target_sources(stepper_lib
         PUBLIC
         FILE_SET cxx_modules TYPE CXX_MODULES FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/stepper_pio/pio_irq_util.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/stepper_pio/stepper.cpp
+        ${stepper_PATH}/source/pio_irq_util.cpp
+        ${stepper_PATH}/source/stepper.cpp
 )
-pico_generate_pio_header(stepper
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/stepper_pio/stepper.pio
+pico_generate_pio_header(stepper_lib
+        ${stepper_PATH}/source/stepper.pio
 )
 
-target_link_libraries( stepper
+target_link_libraries( stepper_lib
         pico_stdlib
         hardware_pio
         hardware_gpio
 )
-
 
 target_link_libraries( ${CMAKE_PROJECT_NAME}
         pico_stdlib
@@ -53,6 +62,6 @@ target_link_libraries( ${CMAKE_PROJECT_NAME}
         # for drv8711
         hardware_spi
         # end drv8711
-        stepper
+        stepper_lib
 )
 
