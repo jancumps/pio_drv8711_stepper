@@ -1,12 +1,14 @@
 # pio_drv8711_stepper
-Raspberry PIO autonomous stepper motor driver
+Raspberry PIO autonomous stepper motor driver  
+Demo program for [pio_stepper_lib](https://github.com/jancumps/pio_stepper_lib): C++ library to run stepper motors in PIO state machines
 
 see blog: [Stepper Motor Control with Raspberry Pico PI and DRV8711 driver- Part 5: a more autonomous PIO](https://community.element14.com/products/raspberry-pi/b/blog/posts/stepper-motor-control-with-raspberry-pico-pi-and-drv8711-driver--part-5-a-more-autonomous-pio)  
 
 - 4 motors can be controlled per PIO
 - supports DRV8711 (but can be ported to any driver that supports PIN and DIR operation)
-- can handle as many commands as PIO FIFO accepts without waiting (default 8). Each command can autonomously handle 2147483647 steps, and the spin direction
-- can notify the calling program when an instruction is finished
+- can handle as many commands as PIO FIFO accepts without waiting (default 8).  
+- Each command can autonomously handle 2147483647 steps, and the spin direction
+- can notify the calling program when a command is finished
 
 Example motor instruction batch of 6 instructions:  
 ```
