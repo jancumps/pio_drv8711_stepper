@@ -76,6 +76,9 @@ void stepper_callback_controller::handler() {
     }
 }
 
+// initialise static class data
+// static pio program offset
+uint stepper_controller::pio_offset_[NUM_PIOS];
 // static data member must be initialised outside of the class, or the linker will not capture it
 std::array<stepper_callback_controller *, NUM_PIOS * 4> stepper_callback_controller::interrupt_manager::steppers_;
 

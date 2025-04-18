@@ -2,8 +2,10 @@
 
 #include "pico/stdlib.h"
 
+// the PIOs are declared here
+// and we select one (or more) of those
+// to run the motor state machine(s) on
 #include "hardware/pio.h"
-#include "stepper.pio.h"
 
 #include <array>
 #include <iterator>
@@ -22,8 +24,8 @@ import drv8711_pico; // Pico and project specific code
 
 import stepper; // PIO stepper lib
 
-// #define MICROSTEP_8
-#undef MICROSTEP_8
+#define MICROSTEP_8
+// #undef MICROSTEP_8
 
 const uint dir = 4U; // implies that step is gpio 5
 
@@ -50,13 +52,14 @@ motor_t motor1(piostep, sm);
 // PIO init
 
 void init_pio() {
-    uint offset = pio_add_program(piostep, &stepper_program);
-    printf("Loaded program at %d\n", offset);
+    // program the pio used for the motors
+    // do this only once per used pio
+    motor_t::pio_program(piostep);
 
+    // initialise and enable the motor state machine
     motor1.register_pio_interrupt(pio_irq, true);
-
-    stepper_program_init(piostep, sm, offset, dir, clock_divider);
-    pio_sm_set_enabled(piostep, sm, true);
+    motor1.pio_init(dir, clock_divider);
+    motor1.enable(true);
 }
 
 // ================================================================
@@ -106,8 +109,6 @@ void full_demo(const commands_t & cmd) {
     drv8711_pico::wakeup_drv8711 w;
     sleep_ms(1); // see datasheet
 
-    printf("running on sm %d, with interrupt %d\n", sm, stepper_PIO_IRQ_DONE);
-    
     run_with_delay(cmd, 4300);
     run_with_delay(cmd, 7000);
     run_with_delay(cmd, 9000);

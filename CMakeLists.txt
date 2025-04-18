@@ -13,7 +13,6 @@ add_executable(${CMAKE_PROJECT_NAME})
 target_sources(${CMAKE_PROJECT_NAME}
         PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/source/main.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/stepper_pio/stepper_impl.cpp
 )
 target_sources(${CMAKE_PROJECT_NAME}
         PUBLIC
@@ -23,13 +22,29 @@ target_sources(${CMAKE_PROJECT_NAME}
         ${CMAKE_CURRENT_SOURCE_DIR}/source/drv8711_driver/drv8711_config.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/drv8711_pico.cpp
         # end drv8711
+)
+
+add_library(stepper)
+target_sources(stepper
+        PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/stepper_pio/stepper_impl.cpp
+)
+target_sources(stepper
+        PUBLIC
+        FILE_SET cxx_modules TYPE CXX_MODULES FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/source/stepper_pio/pio_irq_util.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/stepper_pio/stepper.cpp
 )
-
-pico_generate_pio_header(${CMAKE_PROJECT_NAME}
+pico_generate_pio_header(stepper
         ${CMAKE_CURRENT_SOURCE_DIR}/source/stepper_pio/stepper.pio
 )
+
+target_link_libraries( stepper
+        pico_stdlib
+        hardware_pio
+        hardware_gpio
+)
+
 
 target_link_libraries( ${CMAKE_PROJECT_NAME}
         pico_stdlib
@@ -38,5 +53,6 @@ target_link_libraries( ${CMAKE_PROJECT_NAME}
         # for drv8711
         hardware_spi
         # end drv8711
+        stepper
 )
 

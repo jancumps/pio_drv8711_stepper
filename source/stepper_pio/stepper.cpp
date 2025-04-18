@@ -9,6 +9,7 @@ module;
 export module stepper;
 export namespace stepper {
 
+// implementations are in ./stepper_impl.cpp
 // max steps taken is 2147483647 (highest number that fits in 31 bits)
 
 /*  Stepper motor command wrapper
@@ -44,9 +45,20 @@ public:
     static void set_delay(PIO pio, uint sm, uint32_t delay);
     inline void take_steps(const command& cmd) { take_steps(pio_, sm_, cmd); }
     inline void set_delay(uint32_t delay) { set_delay(pio_, sm_, delay); }
+    // state machine config
+    inline void pio_init(uint dir_pin, float clock_divider) {
+        stepper_program_init(pio_, sm_, pio_offset_[PIO_NUM(pio_)], dir_pin, clock_divider);
+    }
+    // enable or disable state machine
+    inline void enable(bool enable) { pio_sm_set_enabled(pio_, sm_, enable); }
+    // program the pio and store offset, to be called by user before a pio is used.
+    static inline void pio_program(PIO pio) {
+        pio_offset_[PIO_NUM(pio)] = pio_add_program(pio, &stepper_program);
+    }
 protected:
     PIO pio_;
     uint sm_;
+    static uint pio_offset_[NUM_PIOS];
 };
 
 /*  Stepper motor for PIO state machine, 
