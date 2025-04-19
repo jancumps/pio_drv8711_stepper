@@ -17,15 +17,16 @@ export namespace drv8711_pico {
 class driver_pico : public drv8711::driver {
 public:    
     driver_pico(spi_inst_t *spi, 
-        uint csn, uint rx, uint tx, uint sck,
+        uint cs, uint rx, uint tx, uint sck,
         uint n_sleep, uint reset) : drv8711::driver(),
         spi_(spi), 
-        csn_(csn), rx_(rx), tx_(tx), sck_(sck),
+        cs_(cs), rx_(rx), tx_(tx), sck_(sck),
         n_sleep_(n_sleep), reset_(reset) {}
     
-    virtual void write(uint16_t data) override {
+    // write to a register
+    virtual void write(uint16_t reg) override {
         cs_drive(true); // drv8711 has CS active high
-        spi_write16_blocking(spi_, &data, 1);
+        spi_write16_blocking(spi_, &reg, 1);
         cs_drive(false);
     }
     
@@ -42,9 +43,10 @@ public:
         gpio_set_function(sck_, GPIO_FUNC_SPI);
         gpio_set_function(tx_, GPIO_FUNC_SPI);
         // Chip select is active-high, so we'll initialise it to a driven-low state
-        gpio_init(csn_);
-        gpio_put(csn_, 0);
-        gpio_set_dir(csn_, GPIO_OUT);
+        // because Pico SPI doesn't support active high CS, we 'll bitbang with gpio
+        gpio_init(cs_);
+        gpio_put(cs_, 0);
+        gpio_set_dir(cs_, GPIO_OUT);
     }
 
     void init_gpio() override{
@@ -58,6 +60,9 @@ public:
         gpio_set_dir(reset_, GPIO_OUT);
     }
 
+    // initialise all registers from the defaults
+    // defined in module drv8711_config
+    // developer can override values before calling
     void init_registers() override{
         write(drv8711::reg_ctrl);
         write(drv8711::reg_torque);
@@ -70,13 +75,14 @@ public:
     }
 
 private:
+    // the nop instructions are adviced by sdk when bitbanging cs
     inline void cs_drive( bool high) {
-        asm volatile("nop \n nop \n nop"); // FIXME
-        gpio_put(csn_, high? 1 : 0);
-        asm volatile("nop \n nop \n nop"); // FIXME
+        asm volatile("nop \n nop \n nop");
+        gpio_put(cs_, high? 1 : 0);
+        asm volatile("nop \n nop \n nop");
     }
     spi_inst_t * spi_;
-    uint csn_;
+    uint cs_;
     uint rx_;
     uint tx_;
     uint sck_;

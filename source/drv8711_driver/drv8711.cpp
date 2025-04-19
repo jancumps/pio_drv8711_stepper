@@ -101,7 +101,7 @@ struct STATUS {
 class driver {
 public:
     driver() {}
-    virtual void write(uint16_t data) = 0;
+    virtual void write(uint16_t reg) = 0;
     virtual void enable(bool enable) = 0;
     virtual void init_spi() = 0;
     virtual void init_gpio() = 0;
