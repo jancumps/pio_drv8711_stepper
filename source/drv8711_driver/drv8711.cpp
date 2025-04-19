@@ -98,4 +98,14 @@ struct STATUS {
     }
 };
 
+class drv_8711 {
+public:
+    class wakeup {
+
+    };
+
+private:
+
+};
+
 } // namespace drv8711
