@@ -17,6 +17,14 @@ FetchContent_Declare(stepper
 )
 FetchContent_MakeAvailable(stepper)
 
+FetchContent_Declare(drv8711
+  GIT_REPOSITORY "https://github.com/jancumps/drv8711_lib.git"
+  GIT_TAG "origin/main"
+  # prevent makefile execution (if any)
+  SOURCE_SUBDIR =
+)
+FetchContent_MakeAvailable(drv8711)
+
 add_executable(${CMAKE_PROJECT_NAME})
 target_sources(${CMAKE_PROJECT_NAME}
         PUBLIC
@@ -26,8 +34,8 @@ target_sources(${CMAKE_PROJECT_NAME}
         PUBLIC
         FILE_SET cxx_modules TYPE CXX_MODULES FILES
         # for drv8711
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/drv8711_driver/drv8711.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/drv8711_driver/drv8711_config.cpp
+        ${drv8711_SOURCE_DIR}/source/drv8711.cpp
+        ${drv8711_SOURCE_DIR}/source//drv8711_config.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/drv8711_pico.cpp
         # end drv8711
 )
