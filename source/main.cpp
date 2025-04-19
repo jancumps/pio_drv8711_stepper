@@ -6,6 +6,7 @@
 // and we select one (or more) of those
 // to run the motor state machine(s) on
 #include "hardware/pio.h"
+#include "hardware/spi.h"
 
 #include <array>
 #include <iterator>
@@ -18,7 +19,7 @@
 // each function or class that deals with this IC has drv8711 in the name
 // those are the only code parts that are stepper IC specific
 // if you have an otherdriver, that's what you have to replace.
-import drv8711; // registers
+import drv8711;
 import drv8711_config; // register pre-configuration
 import drv8711_pico; // Pico and project specific code
 
@@ -45,8 +46,16 @@ const uint microstep_x = 1;
 #endif
 
 using motor_t = stepper::stepper_callback_controller;
-
 motor_t motor1(piostep, sm);
+
+// object to manage the drv8711 IC used for motor1
+const uint nsleep = 14U;
+const uint reset = 15U;
+drv8711_pico::driver_pico driver1(spi_default, 
+    PICO_DEFAULT_SPI_CSN_PIN, PICO_DEFAULT_SPI_RX_PIN, 
+    PICO_DEFAULT_SPI_TX_PIN, PICO_DEFAULT_SPI_SCK_PIN,
+    nsleep, reset);
+
 
 // ================================================================
 // PIO init
@@ -68,8 +77,8 @@ void init_everything() {
     stdio_init_all();
 
     // drv8711 specific config and init
-    drv8711_pico::init_drv8711_gpio_hw();
-    drv8711_pico::init_drv8711_spi_hw();
+    driver1.init_gpio();
+    driver1.init_spi();
     // override any default settings
 #ifdef MICROSTEP_8
     drv8711::reg_ctrl.mode = 0x0003; // MODE 8 microsteps
@@ -77,7 +86,7 @@ void init_everything() {
 #else
     drv8711::reg_torque.torque = 0x0080; // try to run cooler
 #endif
-    drv8711_pico::init_drv8711_settings();
+    driver1.init_registers();
 
     init_pio();
 }
@@ -105,8 +114,9 @@ void run_with_delay(const commands_t & cmd, uint32_t delay) {
 }
 
 void full_demo(const commands_t & cmd) {
-    // wake up the drv8711. It goes back to low power when this object leaves the scope
-    drv8711_pico::wakeup_drv8711 w;
+    // wake up the drv8711. 
+    // It goes back to low power when this object leaves the scope
+    drv8711::wakeup w(&driver1);
     sleep_ms(1); // see datasheet
 
     run_with_delay(cmd, 4300);
