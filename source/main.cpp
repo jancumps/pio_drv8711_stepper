@@ -86,7 +86,7 @@ void init_everything() {
 
 using commands_t = std::span<stepper::command>;	
 
-void on_complete(motor_t &stepper) {
+void on_complete(const motor_t &stepper) {
     if (&motor1 == &stepper) {
         printf("motor1 executed command %d\n", motor1.commands());
     }
