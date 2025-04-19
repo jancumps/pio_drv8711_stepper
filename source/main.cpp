@@ -1,16 +1,10 @@
-#include <stdio.h>
+#include "hardware/pio.h" // some definitions used
+#include "hardware/spi.h" // some definitions used
 
-#include "pico/stdlib.h"
-
-// the PIOs are declared here
-// and we select one (or more) of those
-// to run the motor state machine(s) on
-#include "hardware/pio.h"
-#include "hardware/spi.h"
-
-#include <array>
-#include <iterator>
-#include <span>
+#include "pico/stdlib.h"  // for demo section (printf)
+#include <array>          // for demo section
+#include <iterator>       // for demo section
+#include <span>           // for demo section
 
 // this code uses ti drv8711. But the stepper code is driver independent.
 // the imports get the generic register definitions 
