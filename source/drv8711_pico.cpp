@@ -42,8 +42,9 @@ public:
         gpio_set_pulls(rx_, true, false); // drv8711 outputs are open drain
         gpio_set_function(sck_, GPIO_FUNC_SPI);
         gpio_set_function(tx_, GPIO_FUNC_SPI);
-        // Chip select is active-high, so we'll initialise it to a driven-low state
+        // CS is active-high, so we'll initialise it to a driven-low state
         // because Pico SPI doesn't support active high CS, we 'll bitbang with gpio
+        // when communicating over SPI
         gpio_init(cs_);
         gpio_put(cs_, 0);
         gpio_set_dir(cs_, GPIO_OUT);
