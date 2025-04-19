@@ -115,7 +115,7 @@ void run_with_delay(const commands_t & cmd, uint32_t delay) {
 void full_demo(const commands_t & cmd) {
     // wake up the drv8711. 
     // It goes back to low power when this object leaves the scope
-    drv8711::wakeup w(&driver1);
+    drv8711::wakeup w(driver1);
     sleep_ms(1); // see datasheet
 
     run_with_delay(cmd, 4300);

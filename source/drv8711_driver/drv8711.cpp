@@ -107,10 +107,10 @@ public:
 
 class wakeup { // driver out of sleep as long as object in scope
 public:    
-    wakeup(driver *driver) : driver_(driver) { driver_->enable(true); }
-    ~wakeup() { driver_->enable(false); }
+    wakeup(driver& driver) : driver_(driver) { driver.enable(true); }
+    ~wakeup() { driver_.enable(false); }
 private:
-    driver *driver_;
+    driver& driver_;
 };
 
 
