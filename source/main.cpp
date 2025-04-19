@@ -6,18 +6,19 @@
 #include <iterator>       // for demo section (commands container)
 #include <span>           // for demo section (commands container)
 
-// this code uses ti drv8711. But the stepper code is driver independent.
-// the imports get the generic register definitions 
-// default configuaration, and
-// the Pico spi specific communication code.
-// each class that deals with this IC has drv8711 in the name
-// those are the only code parts that are stepper IC specific
-// if you have another driver, that's what you have to replace.
-import drv8711;         // driver classes and registers
-import drv8711_config;  // register pre-configuration
-import drv8711_pico;    // Pico port for driver
+                          // this project uses ti drv8711. 
+                          // But the stepper code is driver independent.
+                          // the imports get the generic register definitions 
+                          // default configuaration, and
+                          // the Pico spi specific communication code.
+                          // each class that deals with this IC has drv8711 in the name
+                          // those are the only code parts that are stepper IC specific
+                          // if you have another driver, that's what you have to replace.
+import drv8711;           // driver classes and registers
+import drv8711_config;    // register pre-configuration
+import drv8711_pico;      // Pico port for driver
 
-import stepper; // PIO stepper lib
+import stepper;           // PIO stepper lib
 
 #define MICROSTEP_8
 // #undef MICROSTEP_8
