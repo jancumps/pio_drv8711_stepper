@@ -1,10 +1,10 @@
-#include "hardware/pio.h" // some definitions used
-#include "hardware/spi.h" // some definitions used
+#include "hardware/pio.h" // some constant definitions used
+#include "hardware/spi.h" // some constant definitions used
 
 #include "pico/stdlib.h"  // for demo section (printf)
-#include <array>          // for demo section
-#include <iterator>       // for demo section
-#include <span>           // for demo section
+#include <array>          // for demo section (commands container)
+#include <iterator>       // for demo section (commands container)
+#include <span>           // for demo section (commands container)
 
 // this code uses ti drv8711. But the stepper code is driver independent.
 // the imports get the generic register definitions 
