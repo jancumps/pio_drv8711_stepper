@@ -76,7 +76,7 @@ public:
     }
 
 private:
-    // the nop instructions are adviced by sdk when bitbanging cs
+    // the nop instructions are advised by sdk when bitbanging cs
     inline void cs_drive( bool high) {
         asm volatile("nop \n nop \n nop");
         gpio_put(cs_, high? 1 : 0);
