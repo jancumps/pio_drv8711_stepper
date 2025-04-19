@@ -23,13 +23,13 @@ public:
         csn_(csn), rx_(rx), tx_(tx), sck_(sck),
         n_sleep_(n_sleep), reset_(reset) {}
     
-    virtual void write(uint16_t data) {
+    virtual void write(uint16_t data) override {
         cs_drive(true); // drv8711 has CS active high
         spi_write16_blocking(spi_, &data, 1);
         cs_drive(false);
     }
     
-    virtual void enable(bool enable) {
+    virtual void enable(bool enable) override {
         gpio_put(n_sleep_, enable ? 1 : 0);
     }
 
