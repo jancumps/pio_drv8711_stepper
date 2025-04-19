@@ -18,7 +18,7 @@
 // each function or class that deals with this IC has drv8711 in the name
 // those are the only code parts that are stepper IC specific
 // if you have an otherdriver, that's what you have to replace.
-import drv8711; // registers
+import drv8711;
 import drv8711_config; // register pre-configuration
 import drv8711_pico; // Pico and project specific code
 
@@ -45,7 +45,6 @@ const uint microstep_x = 1;
 #endif
 
 using motor_t = stepper::stepper_callback_controller;
-
 motor_t motor1(piostep, sm);
 
 // ================================================================
@@ -105,8 +104,9 @@ void run_with_delay(const commands_t & cmd, uint32_t delay) {
 }
 
 void full_demo(const commands_t & cmd) {
-    // wake up the drv8711. It goes back to low power when this object leaves the scope
-    drv8711_pico::wakeup_drv8711 w;
+    // wake up the drv8711. 
+    // It goes back to low power when this object leaves the scope
+    drv8711::wakeup w(drv8711_pico::driver1);
     sleep_ms(1); // see datasheet
 
     run_with_delay(cmd, 4300);

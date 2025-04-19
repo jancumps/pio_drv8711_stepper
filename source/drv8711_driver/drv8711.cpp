@@ -99,13 +99,28 @@ struct STATUS {
 };
 
 class drv_8711 {
+using spi_writer_t = void (*)(const uint16_t &); // callback definition
+using enabler_t = void (*)(bool); // callback definition
 public:
-    class wakeup {
+    drv_8711(spi_writer_t writer, enabler_t enabler) : 
+        writer_(writer),
+        enabler_(enabler) {}
 
-    };
+    inline void write(uint32_t data) { if (writer_ != nullptr) { (writer_)(data); } }
+    inline void enable(bool enable) { if (enabler_ != nullptr) { (enabler_)(enable); } }
 
 private:
-
+    spi_writer_t writer_;
+    enabler_t enabler_;
 };
+
+class wakeup { // driver out of sleep as long as object in scope
+public:    
+    wakeup(drv_8711& driver) : driver_(driver) { driver_.enable(true); }
+    ~wakeup() { driver_.enable(true); }
+private:
+drv_8711& driver_;
+};
+
 
 } // namespace drv8711

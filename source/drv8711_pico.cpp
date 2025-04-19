@@ -16,24 +16,24 @@ export namespace drv8711_pico {
 
 const uint nsleep = 14U;
 const uint reset = 15U;
-    
-class wakeup_drv8711 { // driver out of sleep as long as object in scope
-    public:    
-    wakeup_drv8711() { gpio_put(nsleep, 1); }
-    ~wakeup_drv8711() { gpio_put(nsleep, 0); }
-};
 
-static inline void cs_drive(bool high) {
+inline void enable(bool enable) {
+    gpio_put(nsleep, enable ? 1 : 0);
+}
+
+inline void cs_drive(bool high) {
     asm volatile("nop \n nop \n nop"); // FIXME
     gpio_put(PICO_DEFAULT_SPI_CSN_PIN, high? 1 : 0);
     asm volatile("nop \n nop \n nop"); // FIXME
 }
 
-static void spi_write(const uint16_t &data) {
+void spi_write(const uint16_t &data) {
     cs_drive(true); // drv8711 has CS active high
     spi_write16_blocking(spi_default, &data, 1);
     cs_drive(false);
 }
+
+drv8711::drv_8711 driver1(drv8711_pico::spi_write, drv8711_pico::enable);
 
 void init_drv8711_settings() {
     spi_write(drv8711::reg_ctrl);
