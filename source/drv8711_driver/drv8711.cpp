@@ -103,6 +103,9 @@ public:
     driver() {}
     virtual void write(uint16_t data) = 0;
     virtual void enable(bool enable) = 0;
+    virtual void init_spi() = 0;
+    virtual void init_gpio() = 0;
+    virtual void init_registers() = 0;
 };
 
 class wakeup { // driver out of sleep as long as object in scope

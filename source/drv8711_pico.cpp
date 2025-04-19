@@ -33,18 +33,7 @@ public:
         gpio_put(n_sleep_, enable ? 1 : 0);
     }
 
-    void init_registers() {
-        write(drv8711::reg_ctrl);
-        write(drv8711::reg_torque);
-        write(drv8711::reg_off);
-        write(drv8711::reg_blank);
-        write(drv8711::reg_decay);
-        write(drv8711::reg_stall);
-        write(drv8711::reg_drive);
-        write(drv8711::reg_status);
-    }
-
-    void init_spi() {
+    void init_spi() override{
         // Enable SPI 0 at 1 MHz and connect to GPIOs
         spi_init(spi_, 1000 * 1000);
         spi_set_format(spi_, 16, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST); // 16 bit registers
@@ -58,7 +47,7 @@ public:
         gpio_set_dir(csn_, GPIO_OUT);
     }
 
-    void init_gpio() {
+    void init_gpio() override{
         // nsleep as output
         gpio_init(n_sleep_);
         gpio_put(n_sleep_, 0);
@@ -67,6 +56,17 @@ public:
         gpio_init(reset_);
         gpio_put(reset_, 0);
         gpio_set_dir(reset_, GPIO_OUT);
+    }
+
+    void init_registers() override{
+        write(drv8711::reg_ctrl);
+        write(drv8711::reg_torque);
+        write(drv8711::reg_off);
+        write(drv8711::reg_blank);
+        write(drv8711::reg_decay);
+        write(drv8711::reg_stall);
+        write(drv8711::reg_drive);
+        write(drv8711::reg_status);
     }
 
 private:
