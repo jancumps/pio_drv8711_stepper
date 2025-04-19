@@ -14,61 +14,74 @@ import drv8711_config;
 export module drv8711_pico;
 export namespace drv8711_pico {
 
-const uint nsleep = 14U;
-const uint reset = 15U;
+class driver_pico : public drv8711::driver {
+public:    
+    driver_pico(spi_inst_t *spi, 
+        uint csn, uint rx, uint tx, uint sck,
+        uint n_sleep, uint reset) : drv8711::driver(),
+        spi_(spi), 
+        csn_(csn), rx_(rx), tx_(tx), sck_(sck),
+        n_sleep_(n_sleep), reset_(reset) {}
+    
+    virtual void write(uint16_t data) {
+        cs_drive(true); // drv8711 has CS active high
+        spi_write16_blocking(spi_, &data, 1);
+        cs_drive(false);
+    }
+    
+    virtual void enable(bool enable) {
+        gpio_put(n_sleep_, enable ? 1 : 0);
+    }
 
-inline void enable(bool enable) {
-    gpio_put(nsleep, enable ? 1 : 0);
-}
+    void init_registers() {
+        write(drv8711::reg_ctrl);
+        write(drv8711::reg_torque);
+        write(drv8711::reg_off);
+        write(drv8711::reg_blank);
+        write(drv8711::reg_decay);
+        write(drv8711::reg_stall);
+        write(drv8711::reg_drive);
+        write(drv8711::reg_status);
+    }
 
-inline void cs_drive(bool high) {
-    asm volatile("nop \n nop \n nop"); // FIXME
-    gpio_put(PICO_DEFAULT_SPI_CSN_PIN, high? 1 : 0);
-    asm volatile("nop \n nop \n nop"); // FIXME
-}
+    void init_spi() {
+        // Enable SPI 0 at 1 MHz and connect to GPIOs
+        spi_init(spi_, 1000 * 1000);
+        spi_set_format(spi_, 16, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST); // 16 bit registers
+        gpio_set_function(rx_, GPIO_FUNC_SPI);
+        gpio_set_pulls(rx_, true, false); // drv8711 outputs are open drain
+        gpio_set_function(sck_, GPIO_FUNC_SPI);
+        gpio_set_function(tx_, GPIO_FUNC_SPI);
+        // Chip select is active-high, so we'll initialise it to a driven-low state
+        gpio_init(csn_);
+        gpio_put(csn_, 0);
+        gpio_set_dir(csn_, GPIO_OUT);
+    }
 
-void spi_write(const uint16_t &data) {
-    cs_drive(true); // drv8711 has CS active high
-    spi_write16_blocking(spi_default, &data, 1);
-    cs_drive(false);
-}
+    void init_gpio() {
+        // nsleep as output
+        gpio_init(n_sleep_);
+        gpio_put(n_sleep_, 0);
+        gpio_set_dir(n_sleep_, GPIO_OUT);
+        // reset as output
+        gpio_init(reset_);
+        gpio_put(reset_, 0);
+        gpio_set_dir(reset_, GPIO_OUT);
+    }
 
-drv8711::drv_8711 driver1(drv8711_pico::spi_write, drv8711_pico::enable);
-
-void init_drv8711_settings() {
-    spi_write(drv8711::reg_ctrl);
-    spi_write(drv8711::reg_torque);
-    spi_write(drv8711::reg_off);
-    spi_write(drv8711::reg_blank);
-    spi_write(drv8711::reg_decay);
-    spi_write(drv8711::reg_stall);
-    spi_write(drv8711::reg_drive);
-    spi_write(drv8711::reg_status);
-}
-
-void init_drv8711_spi_hw() {
-    // Enable SPI 0 at 1 MHz and connect to GPIOs
-    spi_init(spi_default, 1000 * 1000);
-    spi_set_format(spi_default, 16, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST); // 16 bit registers
-    gpio_set_function(PICO_DEFAULT_SPI_RX_PIN, GPIO_FUNC_SPI);
-    gpio_set_pulls(PICO_DEFAULT_SPI_RX_PIN, true, false); // drv8711 outputs are open drain
-    gpio_set_function(PICO_DEFAULT_SPI_SCK_PIN, GPIO_FUNC_SPI);
-    gpio_set_function(PICO_DEFAULT_SPI_TX_PIN, GPIO_FUNC_SPI);
-    // Chip select is active-high, so we'll initialise it to a driven-low state
-    gpio_init(PICO_DEFAULT_SPI_CSN_PIN);
-    gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
-    gpio_set_dir(PICO_DEFAULT_SPI_CSN_PIN, GPIO_OUT);
-}
-
-void init_drv8711_gpio_hw() {
-    // nsleep as output
-    gpio_init(nsleep);
-    gpio_put(nsleep, 0);
-    gpio_set_dir(nsleep, GPIO_OUT);
-    // reset as output
-    gpio_init(reset);
-    gpio_put(reset, 0);
-    gpio_set_dir(reset, GPIO_OUT);
-}
+private:
+    inline void cs_drive( bool high) {
+        asm volatile("nop \n nop \n nop"); // FIXME
+        gpio_put(csn_, high? 1 : 0);
+        asm volatile("nop \n nop \n nop"); // FIXME
+    }
+    spi_inst_t * spi_;
+    uint csn_;
+    uint rx_;
+    uint tx_;
+    uint sck_;
+    uint n_sleep_;
+    uint reset_;
+};
 
 } // namespace drv8711_pico
