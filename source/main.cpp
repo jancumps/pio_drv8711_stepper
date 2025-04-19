@@ -34,7 +34,7 @@ const uint dir = 4U; // implies that step is gpio 5
 const auto piostep = pio1;
 // use pio irq channel 0. Can be 0 or 1
 const uint pio_irq = 0;
-
+// state machine
 const uint sm = 2U;
 
 #ifdef MICROSTEP_8
@@ -49,12 +49,11 @@ using motor_t = stepper::stepper_callback_controller;
 motor_t motor1(piostep, sm);
 
 // object to manage the drv8711 IC used for motor1
-const uint nsleep = 14U;
-const uint reset = 15U;
-drv8711_pico::driver_pico driver1(spi_default, 
-    PICO_DEFAULT_SPI_CSN_PIN, PICO_DEFAULT_SPI_RX_PIN, 
-    PICO_DEFAULT_SPI_TX_PIN, PICO_DEFAULT_SPI_SCK_PIN,
-    nsleep, reset);
+drv8711_pico::driver_pico driver1(
+    spi_default,                                       // spi
+    PICO_DEFAULT_SPI_CSN_PIN, PICO_DEFAULT_SPI_RX_PIN, // spi
+    PICO_DEFAULT_SPI_TX_PIN, PICO_DEFAULT_SPI_SCK_PIN, // spi
+    14U, 15U);                                         // n_sleep, reset
 
 
 // ================================================================
