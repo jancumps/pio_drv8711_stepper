@@ -16,12 +16,12 @@
 // the imports get the generic register definitions 
 // default configuaration, and
 // the Pico spi specific communication code.
-// each function or class that deals with this IC has drv8711 in the name
+// each class that deals with this IC has drv8711 in the name
 // those are the only code parts that are stepper IC specific
-// if you have an otherdriver, that's what you have to replace.
-import drv8711;
-import drv8711_config; // register pre-configuration
-import drv8711_pico; // Pico and project specific code
+// if you have another driver, that's what you have to replace.
+import drv8711;         // driver classes and registers
+import drv8711_config;  // register pre-configuration
+import drv8711_pico;    // Pico port for driver
 
 import stepper; // PIO stepper lib
 
@@ -55,10 +55,6 @@ drv8711_pico::driver_pico driver1(
     PICO_DEFAULT_SPI_TX_PIN, PICO_DEFAULT_SPI_SCK_PIN, // spi
     14U, 15U);                                         // n_sleep, reset
 
-
-// ================================================================
-// PIO init
-
 void init_pio() {
     // program the pio used for the motors
     // do this only once per used pio
@@ -69,8 +65,6 @@ void init_pio() {
     motor1.pio_init(dir, clock_divider);
     motor1.enable(true);
 }
-
-// ================================================================
 
 void init_everything() {
     stdio_init_all();
