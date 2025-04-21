@@ -69,3 +69,4 @@ target_link_libraries( ${CMAKE_PROJECT_NAME}
         stepper
 )
 
+pico_add_extra_outputs(${CMAKE_PROJECT_NAME} )
