@@ -83,8 +83,10 @@ void init_everything() {
 
 using commands_t = std::span<stepper::command>;	
 
+volatile int steps_countdown = 0U;
 void on_complete(const motor_t &stepper) {
     if (&motor1 == &stepper) {
+        steps_countdown =  steps_countdown - 1;
         printf("motor1 executed command %d\n", motor1.commands());
     }
 }
@@ -92,10 +94,12 @@ void on_complete(const motor_t &stepper) {
 void run_with_delay(const commands_t & cmd, uint32_t delay) {
     printf("delay: %d\n", delay);
     motor1.set_delay(delay);
+
+    steps_countdown = cmd.size();
     for(auto c : cmd) {
         motor1.take_steps(c);
     }
-    while(motor1.commands() < cmd.size() ) {}
+    while(steps_countdown) {}
     printf("interrupts expected: %d, received %d\n", cmd.size(), motor1.commands());
     motor1.reset_commands();
     sleep_ms(500); // pause for demo purpose    
