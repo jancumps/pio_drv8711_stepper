@@ -20,7 +20,8 @@ import drv8711_pico;      // Pico port for driver
 
 import stepper;           // PIO stepper lib
 
-#define MICROSTEP_8
+// #define MICROSTEP_8
+#define MICROSTEP_2
 // #undef MICROSTEP_8
 
 const uint dir = 4U; // implies that step is gpio 5
@@ -35,6 +36,9 @@ const uint sm = 2U;
 #ifdef MICROSTEP_8
 const float clock_divider = 3; // works well for 8 microsteps
 const uint microstep_x = 8;
+#elifdef MICROSTEP_2
+const float clock_divider = 8; // works well for 8 microsteps
+const uint microstep_x = 2;
 #else
 const float clock_divider = 16; // works well for no microsteps
 const uint microstep_x = 1;
@@ -70,6 +74,9 @@ void init_everything() {
     // override any default settings
 #ifdef MICROSTEP_8
     drv8711::reg_ctrl.mode = 0x0003; // MODE 8 microsteps
+    drv8711::reg_torque.torque = 0x0020; // try to run cooler
+#elifdef MICROSTEP_2
+    drv8711::reg_ctrl.mode = 0x0002; // MODE 8 microsteps
     drv8711::reg_torque.torque = 0x0020; // try to run cooler
 #else
     drv8711::reg_torque.torque = 0x0080; // try to run cooler
