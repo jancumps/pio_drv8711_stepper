@@ -14,6 +14,7 @@
                           // each class that deals with this IC has drv8711 in the name
                           // those are the only code parts that are stepper IC specific
                           // if you have another driver, that's what you have to replace.
+import stepper_driver;    // wakeup class
 import drv8711;           // driver classes and registers
 import drv8711_pico;      // Pico port for driver
 import drv8711_config;    // register pre-configuration
@@ -21,8 +22,7 @@ import drv8711_config;    // register pre-configuration
 import stepper;           // PIO stepper lib
 
 // #define MICROSTEP_8
-// #define MICROSTEP_2
-#undef MICROSTEP_8
+#define MICROSTEP_2
 
 const uint dir = 4U; // implies that step is gpio 5
 
@@ -48,7 +48,8 @@ using motor_t = stepper::stepper_callback_controller;
 motor_t motor1(piostep, sm);
 
 // object to manage the drv8711 IC used for motor1
-drv8711_pico::drv8711_pico driver1(
+using driver_t = drv8711_pico::drv8711_pico;
+driver_t driver1(
     spi_default, 1000 * 1000,                                      // spi
     PICO_DEFAULT_SPI_CSN_PIN, PICO_DEFAULT_SPI_RX_PIN, // spi
     PICO_DEFAULT_SPI_TX_PIN, PICO_DEFAULT_SPI_SCK_PIN, // spi
@@ -72,9 +73,9 @@ void init_everything() {
 #ifdef MICROSTEP_8
     drv8711::reg_torque.torque = 0x0020; // try to run cooler
 #elifdef MICROSTEP_2
-    drv8711::reg_torque.torque = 0x0020; // try to run cooler
+    drv8711::reg_torque.torque = 0x0060; // try to run cooler
 #else
-    drv8711::reg_torque.torque = 0x00ba; // try to run cooler
+    drv8711::reg_torque.torque = 0x00ca; // try to run cooler
 #endif
     driver1.init();
     driver1.microsteps(microstep_x);
@@ -111,7 +112,7 @@ void run_with_delay(const commands_t & cmd, uint32_t delay) {
 void full_demo(const commands_t & cmd) {
     // wake up the drv8711. 
     // It goes back to low power when this object leaves the scope
-    drv8711::wakeup w(driver1);
+    stepper_driver::wakeup w(driver1);
     sleep_ms(1); // see datasheet
 
     run_with_delay(cmd, 4300);
