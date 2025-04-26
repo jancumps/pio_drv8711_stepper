@@ -22,7 +22,7 @@ import drv8711_config;    // register pre-configuration
 import stepper;           // PIO stepper lib
 
 // #define MICROSTEP_8
-#define MICROSTEP_2
+#define MICROSTEP_8
 
 const uint dir = 4U; // implies that step is gpio 5
 
@@ -77,6 +77,7 @@ void init_everything() {
 #else
     drv8711::reg_torque.torque = 0x00ca; // try to run cooler
 #endif
+
     driver1.init();
     driver1.microsteps(microstep_x);
 
@@ -110,7 +111,7 @@ void run_with_delay(const commands_t & cmd, uint32_t delay) {
 }
 
 void full_demo(const commands_t & cmd) {
-    // wake up the drv8711. 
+    // wake up the driver IC. 
     // It goes back to low power when this object leaves the scope
     stepper_driver::wakeup w(driver1);
     sleep_ms(1); // see datasheet
