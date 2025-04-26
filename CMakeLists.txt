@@ -19,6 +19,12 @@ FetchContent_MakeAvailable(stepper)
 
 # for drv8711
 
+FetchContent_Declare(stepper_driver
+  GIT_REPOSITORY "https://github.com/jancumps/stepper_driver_lib.git"
+  GIT_TAG "origin/main"
+)
+FetchContent_MakeAvailable(stepper_driver)
+
 FetchContent_Declare(drv8711
   GIT_REPOSITORY "https://github.com/jancumps/drv8711_lib.git"
   GIT_TAG "origin/main"
@@ -52,6 +58,7 @@ add_library(pico_drv8711)
 target_sources(pico_drv8711
         PUBLIC
         FILE_SET cxx_modules TYPE CXX_MODULES FILES
+        ${stepper_driver_SOURCE_DIR}/source/stepper_driver.cpp
         ${pico_drv8711_SOURCE_DIR}/source/drv8711_pico.cpp
         ${drv8711_SOURCE_DIR}/source/drv8711.cpp
         ${drv8711_SOURCE_DIR}/source/drv8711_config.cpp
