@@ -15,8 +15,8 @@
                           // those are the only code parts that are stepper IC specific
                           // if you have another driver, that's what you have to replace.
 import drv8711;           // driver classes and registers
-import drv8711_config;    // register pre-configuration
 import drv8711_pico;      // Pico port for driver
+import drv8711_config;    // register pre-configuration
 
 import stepper;           // PIO stepper lib
 
@@ -74,7 +74,7 @@ void init_everything() {
 #elifdef MICROSTEP_2
     drv8711::reg_torque.torque = 0x0020; // try to run cooler
 #else
-    // drv8711::reg_torque.torque = 0x003F; // try to run cooler
+    drv8711::reg_torque.torque = 0x00ba; // try to run cooler
 #endif
     driver1.init();
     driver1.microsteps(microstep_x);
