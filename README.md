@@ -14,9 +14,13 @@ Example motor instruction batch of 6 instructions:
 ```
 stepper::stepper_callback_controller motor1(piostep, sm);
 
-// object to manage the a4988 IC used for motor1
-using driver_t = a4988_pico::a4988_pico;
-driver_t driver1(n_enable, ms1, ms2, ms3);
+// object to manage the drv8711 IC used for motor1
+using driver_t = drv8711_pico::drv8711_pico;
+driver_t driver1(
+    spi_default, 1000 * 1000,                          // spi
+    PICO_DEFAULT_SPI_CSN_PIN, PICO_DEFAULT_SPI_RX_PIN, // spi
+    PICO_DEFAULT_SPI_TX_PIN, PICO_DEFAULT_SPI_SCK_PIN, // spi
+    14U, 15U);                                         // n_sleep, reset
 
 void on_complete(stepper::stepper_callback_controller &stepper) {
     if (&motor1 == &stepper) {
