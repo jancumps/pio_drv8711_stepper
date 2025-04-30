@@ -14,6 +14,10 @@ Example motor instruction batch of 6 instructions:
 ```
 stepper::stepper_callback_controller motor1(piostep, sm);
 
+// object to manage the a4988 IC used for motor1
+using driver_t = a4988_pico::a4988_pico;
+driver_t driver1(n_enable, ms1, ms2, ms3);
+
 void on_complete(stepper::stepper_callback_controller &stepper) {
     if (&motor1 == &stepper) {
         printf("motor1 executed command %d\n", motor1.commands());
@@ -33,6 +37,11 @@ int main() {
         {350, true}}
     };
 
+    // wake up the driver IC. 
+    // It goes back to low power when this object leaves the scope
+    stepper_driver::wakeup w(driver1);
+    sleep_ms(1); // see datasheet
+    
     motor1.set_delay(delay);
     for(auto c : cmd) {
         motor1.take_steps(c);
