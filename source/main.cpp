@@ -21,8 +21,9 @@ import drv8711_config;    // register pre-configuration
 
 import stepper;           // PIO stepper lib
 
+// #define MICROSTEP_2
 // #define MICROSTEP_8
-#define MICROSTEP_8
+// #define MICROSTEP_16
 
 const uint dir = 4U; // implies that step is gpio 5
 
@@ -33,7 +34,10 @@ const uint pio_irq = 0;
 // state machine
 const uint sm = 2U;
 
-#ifdef MICROSTEP_8
+#ifdef MICROSTEP_16
+const float clock_divider = 2; // works well for 16 microsteps
+const uint microstep_x = 16;
+#elifdef MICROSTEP_8
 const float clock_divider = 3; // works well for 8 microsteps
 const uint microstep_x = 8;
 #elifdef MICROSTEP_2
@@ -70,12 +74,14 @@ void init_everything() {
     stdio_init_all();
 
     // drv8711 specific config and init
-#ifdef MICROSTEP_8
-    drv8711::reg_torque.torque = 0x0020; // try to run cooler
+#ifdef MICROSTEP_16
+    drv8711::reg_torque.torque = 0x0010; // try to run cooler
+#elifdef MICROSTEP_8
+    drv8711::reg_torque.torque = 0x0010; // try to run cooler
 #elifdef MICROSTEP_2
-    drv8711::reg_torque.torque = 0x0060; // try to run cooler
+    drv8711::reg_torque.torque = 0x00c0; // try to run cooler
 #else
-    drv8711::reg_torque.torque = 0x00ca; // try to run cooler
+    drv8711::reg_torque.torque = 0x00ca / 3; // try to run cooler
 #endif
 
     driver1.init();
@@ -116,10 +122,10 @@ void full_demo(const commands_t & cmd) {
     stepper_driver::wakeup w(driver1);
     sleep_ms(1); // see datasheet
 
-    run_with_delay(cmd, 4300);
-    run_with_delay(cmd, 7000);
-    run_with_delay(cmd, 9000);
-    run_with_delay(cmd, 20000);
+    // run_with_delay(cmd, 4300);
+     run_with_delay(cmd, 7000);
+    // run_with_delay(cmd, 9000);
+    // run_with_delay(cmd, 20000);
 }
 
 int main() {
@@ -133,6 +139,15 @@ int main() {
         {35 * microstep_x, true},
         {200 * microstep_x, true}}
     };
+    // std::array<stepper::command, 8> cmd{{
+    //     {500 * microstep_x, true}, 
+    //     {1000 * microstep_x, false}, 
+    //     {1000 * microstep_x, true}, 
+    //     {500 * microstep_x, false},
+    //     {500 * microstep_x, false}, 
+    //     {1000 * microstep_x, true}, 
+    //     {1000 * microstep_x, false}, 
+    //     {500 * microstep_x, true}}};
 
     motor1.on_complete_callback(on_complete); 
 
