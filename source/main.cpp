@@ -28,7 +28,7 @@ import stepper;           // PIO stepper lib
 const uint dir = 4U; // implies that step is gpio 5
 
 // config what PIO and IRQ channel to use
-const auto piostep = pio1;
+const auto piostep = pio2;
 // use pio irq channel 0. Can be 0 or 1
 const uint pio_irq = 0;
 // state machine
